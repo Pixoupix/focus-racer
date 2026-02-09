@@ -83,7 +83,7 @@ export default function AdminSidebar() {
             <span className="text-white font-bold text-sm">FR</span>
           </div>
           <span className="text-lg font-bold">
-            Focus <span className="text-orange-light">Racer</span>
+            Focus <span className="text-orange">Racer</span>
           </span>
         </Link>
         <p className="text-navy-200 text-xs mt-2 ml-10">Administration</p>
@@ -100,7 +100,7 @@ export default function AdminSidebar() {
                   className={cn(
                     "flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
                     isActive
-                      ? "bg-orange/15 text-orange-light shadow-sm"
+                      ? "bg-white/10 text-orange shadow-sm"
                       : "text-navy-100 hover:bg-white/5 hover:text-white"
                   )}
                 >

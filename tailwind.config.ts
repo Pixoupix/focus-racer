@@ -34,7 +34,7 @@ const config: Config = {
           DEFAULT: '#FF6B4A',
           hover: '#E55F42',
           dark: '#E55F42',
-          light: '#FFF1EE',
+          light: '#FF8A6F',
           50: '#FFF7ED',
           100: '#FFEDD5',
           200: '#FED7AA',
@@ -50,6 +50,12 @@ const config: Config = {
         navy: {
           DEFAULT: '#0F172A',
           light: '#1E293B',
+          100: '#CBD5E1',
+          200: '#94A3B8',
+          300: '#64748B',
+          600: '#334155',
+          700: '#1E293B',
+          800: '#0F172A',
         },
         primary: {
           DEFAULT: '#0F172A',

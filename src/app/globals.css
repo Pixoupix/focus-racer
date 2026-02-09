@@ -115,6 +115,10 @@
     @apply bg-gradient-to-r from-[#FF6B4A] to-[#F97316];
   }
 
+  .gradient-navy {
+    @apply bg-gradient-to-b from-[#0F172A] to-[#1E293B];
+  }
+
   /* ===== GLASSMORPHISM CARDS ===== */
   .glass-card {
     @apply bg-white/80 backdrop-blur-sm border border-white/20 shadow-card;

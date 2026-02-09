@@ -1,0 +1,345 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  PHOTOGRAPHER
+  ORGANIZER
+  AGENCY
+  CLUB
+  FEDERATION
+  ADMIN
+  RUNNER
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum SportType {
+  RUNNING
+  TRAIL
+  TRIATHLON
+  CYCLING
+  SWIMMING
+  OBSTACLE
+  OTHER
+}
+
+enum PackType {
+  SINGLE
+  PACK_5
+  PACK_10
+  ALL_INCLUSIVE
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  DELIVERED
+  REFUNDED
+  EXPIRED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String
+  role          UserRole  @default(PHOTOGRAPHER)
+  phone         String?
+  avatar        String?
+  company       String?
+  isActive         Boolean   @default(true)
+  emailVerified    DateTime?
+  stripeAccountId  String?
+  stripeOnboarded  Boolean   @default(false)
+  bio              String?
+  portfolio        String?
+  location         String?
+  avgRating        Float     @default(0)
+  totalReviews     Int       @default(0)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  events           Event[]
+  orders           Order[]
+  createdListings    MarketplaceListing[]  @relation("ListingCreator")
+  applicationsAsPh   MarketplaceApplication[] @relation("ApplicationPhotographer")
+  reviewsGiven       MarketplaceReview[]  @relation("ReviewAuthor")
+  reviewsReceived    MarketplaceReview[]  @relation("ReviewTarget")
+
+  @@index([role])
+  @@index([isActive])
+}
+
+model Event {
+  id           String      @id @default(cuid())
+  name         String
+  date         DateTime
+  location     String?
+  description  String?
+  sportType    SportType   @default(RUNNING)
+  status       EventStatus @default(DRAFT)
+  coverImage   String?
+  primaryColor String?
+  bannerImage  String?
+  logoImage    String?
+  userId       String
+  user         User        @relation(fields: [userId], references: [id])
+  photos       Photo[]
+  startListEntries StartListEntry[]
+  pricePacks   PricePack[]
+  orders       Order[]
+  faceClusteredAt DateTime? // When face clustering was last run
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Photo {
+  id            String      @id @default(cuid())
+  filename      String
+  originalName  String
+  path          String      // HD original (for purchase/download only)
+  webPath       String?     // Optimized version for AI pipeline + web display
+  s3Key         String?
+  thumbnailPath String?
+  bibNumbers    BibNumber[]
+  faces         PhotoFace[]
+  eventId       String
+  event         Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  orderItems    OrderItem[]
+  qualityScore  Float?
+  isBlurry      Boolean     @default(false)
+  autoEdited    Boolean     @default(false)
+  labels        String?
+  faceIndexed   Boolean     @default(false)
+  ocrProvider   String?
+  processedAt   DateTime?
+  createdAt     DateTime    @default(now())
+
+  @@index([eventId])
+}
+
+model BibNumber {
+  id         String @id @default(cuid())
+  number     String
+  photoId    String
+  photo      Photo  @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  confidence Float?
+  source     String @default("ocr") // ocr_tesseract, ocr_aws, face_cluster, manual
+
+  @@unique([photoId, number])
+  @@index([number])
+  @@index([photoId])
+}
+
+model PhotoFace {
+  id          String @id @default(cuid())
+  photoId     String
+  photo       Photo  @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  faceId      String // AWS Rekognition FaceId
+  confidence  Float?
+  boundingBox String? // JSON: {left, top, width, height}
+  createdAt   DateTime @default(now())
+
+  @@index([photoId])
+  @@index([faceId])
+}
+
+model StartListEntry {
+  id         String    @id @default(cuid())
+  bibNumber  String
+  firstName  String
+  lastName   String
+  email      String?
+  eventId    String
+  event      Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  notifiedAt DateTime?
+
+  @@unique([eventId, bibNumber])
+  @@index([eventId])
+}
+
+model PricePack {
+  id       String   @id @default(cuid())
+  name     String
+  type     PackType
+  price    Float
+  quantity Int?
+  isActive Boolean  @default(true)
+  eventId  String
+  event    Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  orders   Order[]
+
+  @@index([eventId])
+}
+
+model Order {
+  id                 String      @id @default(cuid())
+  userId             String?
+  user               User?       @relation(fields: [userId], references: [id])
+  guestEmail         String?
+  guestName          String?
+  eventId            String
+  event              Event       @relation(fields: [eventId], references: [id])
+  packId             String?
+  pack               PricePack?  @relation(fields: [packId], references: [id])
+  items              OrderItem[]
+  status             OrderStatus @default(PENDING)
+  totalAmount        Float
+  platformFee        Float       @default(0)
+  stripeSessionId    String?     @unique
+  stripePaymentId    String?
+  downloadToken      String?     @unique
+  downloadExpiresAt  DateTime?
+  downloadCount      Int         @default(0)
+  lastDownloadAt     DateTime?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([eventId])
+  @@index([status])
+  @@index([downloadToken])
+}
+
+model OrderItem {
+  id        String @id @default(cuid())
+  orderId   String
+  order     Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  photoId   String
+  photo     Photo  @relation(fields: [photoId], references: [id])
+  unitPrice Float
+
+  @@index([orderId])
+  @@index([photoId])
+}
+
+enum GdprRequestStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  REJECTED
+}
+
+enum GdprRequestType {
+  DELETION
+  ACCESS
+  RECTIFICATION
+}
+
+model GdprRequest {
+  id            String            @id @default(cuid())
+  type          GdprRequestType   @default(DELETION)
+  status        GdprRequestStatus @default(PENDING)
+  email         String
+  name          String
+  bibNumber     String?
+  eventId       String?
+  reason        String?
+  adminNote     String?
+  processedBy   String?
+  processedAt   DateTime?
+  photosDeleted Int               @default(0)
+  facesDeleted  Int               @default(0)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  auditLogs     GdprAuditLog[]
+
+  @@index([email])
+  @@index([status])
+}
+
+model GdprAuditLog {
+  id          String      @id @default(cuid())
+  requestId   String
+  request     GdprRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  action      String
+  details     String?
+  performedBy String?
+  createdAt   DateTime    @default(now())
+
+  @@index([requestId])
+}
+
+// =========== MARKETPLACE ===========
+
+enum ListingStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+model MarketplaceListing {
+  id           String         @id @default(cuid())
+  title        String
+  description  String
+  sportType    SportType      @default(RUNNING)
+  eventDate    DateTime
+  eventLocation String
+  budget       Float?
+  currency     String         @default("EUR")
+  status       ListingStatus  @default(OPEN)
+  creatorId    String
+  creator      User           @relation("ListingCreator", fields: [creatorId], references: [id])
+  applications MarketplaceApplication[]
+  requirements String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([creatorId])
+  @@index([status])
+  @@index([sportType])
+  @@index([eventDate])
+}
+
+model MarketplaceApplication {
+  id             String            @id @default(cuid())
+  listingId      String
+  listing        MarketplaceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  photographerId String
+  photographer   User              @relation("ApplicationPhotographer", fields: [photographerId], references: [id])
+  message        String?
+  proposedRate   Float?
+  status         ApplicationStatus @default(PENDING)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@unique([listingId, photographerId])
+  @@index([listingId])
+  @@index([photographerId])
+  @@index([status])
+}
+
+model MarketplaceReview {
+  id         String   @id @default(cuid())
+  authorId   String
+  author     User     @relation("ReviewAuthor", fields: [authorId], references: [id])
+  targetId   String
+  target     User     @relation("ReviewTarget", fields: [targetId], references: [id])
+  listingId  String?
+  rating     Int
+  comment    String?
+  createdAt  DateTime @default(now())
+
+  @@index([authorId])
+  @@index([targetId])
+}

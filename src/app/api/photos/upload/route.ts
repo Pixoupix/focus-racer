@@ -99,6 +99,55 @@ async function processPhotoInBackground(
       },
     });
 
+    // 4b. Refund credit if no bib detected and credit was deducted
+    if (ocrResult.numbers.length === 0) {
+      const photoRecord = await prisma.photo.findUnique({
+        where: { id: photoId },
+        select: { creditDeducted: true, creditRefunded: true },
+      });
+
+      if (photoRecord?.creditDeducted && !photoRecord.creditRefunded) {
+        const event = await prisma.event.findUnique({
+          where: { id: eventId },
+          select: { userId: true },
+        });
+
+        if (event) {
+          await prisma.$transaction(async (tx) => {
+            const user = await tx.user.findUnique({
+              where: { id: event.userId },
+              select: { credits: true },
+            });
+            if (!user) return;
+
+            await tx.user.update({
+              where: { id: event.userId },
+              data: { credits: user.credits + 1 },
+            });
+
+            await tx.creditTransaction.create({
+              data: {
+                userId: event.userId,
+                type: "REFUND",
+                amount: 1,
+                balanceBefore: user.credits,
+                balanceAfter: user.credits + 1,
+                reason: "Aucun dossard detecte",
+                photoId,
+                eventId,
+              },
+            });
+
+            await tx.photo.update({
+              where: { id: photoId },
+              data: { creditRefunded: true },
+            });
+          });
+          console.log(`[AI] Photo ${photoId}: 1 credit refunded (no bib detected)`);
+        }
+      }
+    }
+
     // 5. Face indexing on web version (< 4MB, AWS limit safe)
     if (aiConfig.faceIndexEnabled) {
       try {

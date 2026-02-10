@@ -198,7 +198,7 @@ export default function StatisticsPage() {
               <div className="space-y-4">
                 {stats.topEvents.map((event, index) => (
                   <div key={event.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-sm font-bold text-blue">
+                    <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-sm font-bold text-orange">
                       {index + 1}
                     </div>
                     <div className="flex-1 min-w-0">

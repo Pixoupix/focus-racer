@@ -1,20 +1,22 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Event } from "@/types";
+import ProcessingScreen from "@/components/processing-screen";
 
-interface UploadStatus {
+type Phase = "select" | "confirm" | "processing";
+
+interface SelectedFile {
   file: File;
-  status: "pending" | "uploading" | "processing" | "done" | "error";
-  bibNumbers?: string[];
-  error?: string;
+  previewUrl: string;
 }
 
 export default function UploadPage({
@@ -28,8 +30,14 @@ export default function UploadPage({
   const { toast } = useToast();
   const [event, setEvent] = useState<Event | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [uploads, setUploads] = useState<UploadStatus[]>([]);
+  const [phase, setPhase] = useState<Phase>("select");
+  const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [credits, setCredits] = useState<number>(0);
+  const [isTestMode, setIsTestMode] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -47,7 +55,7 @@ export default function UploadPage({
         } else {
           toast({
             title: "Erreur",
-            description: "Événement non trouvé",
+            description: "Evenement non trouve",
             variant: "destructive",
           });
           router.push("/photographer/dashboard");
@@ -64,51 +72,27 @@ export default function UploadPage({
     }
   }, [id, status, router, toast]);
 
-  const uploadFile = useCallback(async (file: File, index: number) => {
-    setUploads((prev) =>
-      prev.map((u, i) => (i === index ? { ...u, status: "uploading" } : u))
-    );
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("eventId", id);
-
+  const fetchCredits = useCallback(async () => {
     try {
-      const response = await fetch("/api/photos/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Erreur lors de l'upload");
+      const res = await fetch("/api/credits");
+      if (res.ok) {
+        const data = await res.json();
+        setCredits(data.credits);
+        setIsTestMode(data.isTestMode);
       }
-
-      // Mark as done - OCR runs in background on server
-      setUploads((prev) =>
-        prev.map((u, i) =>
-          i === index
-            ? { ...u, status: "done", bibNumbers: data.bibNumbers || [] }
-            : u
-        )
-      );
     } catch (error) {
-      setUploads((prev) =>
-        prev.map((u, i) =>
-          i === index
-            ? {
-                ...u,
-                status: "error",
-                error: error instanceof Error ? error.message : "Erreur inconnue",
-              }
-            : u
-        )
-      );
+      console.error("Error fetching credits:", error);
     }
-  }, [id]);
+  }, []);
 
-  const handleFiles = useCallback(
+  // Cleanup preview URLs on unmount
+  useEffect(() => {
+    return () => {
+      selectedFiles.forEach((sf) => URL.revokeObjectURL(sf.previewUrl));
+    };
+  }, [selectedFiles]);
+
+  const addFiles = useCallback(
     (files: FileList) => {
       const imageFiles = Array.from(files).filter((file) =>
         file.type.startsWith("image/")
@@ -117,35 +101,37 @@ export default function UploadPage({
       if (imageFiles.length === 0) {
         toast({
           title: "Erreur",
-          description: "Veuillez sélectionner des images",
+          description: "Veuillez selectionner des images",
           variant: "destructive",
         });
         return;
       }
 
-      const newUploads: UploadStatus[] = imageFiles.map((file) => ({
+      const newFiles: SelectedFile[] = imageFiles.map((file) => ({
         file,
-        status: "pending" as const,
+        previewUrl: URL.createObjectURL(file),
       }));
 
-      setUploads((prev) => [...prev, ...newUploads]);
-
-      // Start uploading
-      const startIndex = uploads.length;
-      imageFiles.forEach((file, i) => {
-        uploadFile(file, startIndex + i);
-      });
+      setSelectedFiles((prev) => [...prev, ...newFiles]);
     },
-    [uploads.length, toast, uploadFile]
+    [toast]
   );
+
+  const removeFile = useCallback((index: number) => {
+    setSelectedFiles((prev) => {
+      const removed = prev[index];
+      if (removed) URL.revokeObjectURL(removed.previewUrl);
+      return prev.filter((_, i) => i !== index);
+    });
+  }, []);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
       setIsDragging(false);
-      handleFiles(e.dataTransfer.files);
+      addFiles(e.dataTransfer.files);
     },
-    [handleFiles]
+    [addFiles]
   );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -161,11 +147,66 @@ export default function UploadPage({
   const handleFileInput = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files) {
-        handleFiles(e.target.files);
+        addFiles(e.target.files);
+        // Reset input so same files can be re-selected
+        e.target.value = "";
       }
     },
-    [handleFiles]
+    [addFiles]
   );
+
+  const goToConfirm = useCallback(() => {
+    if (selectedFiles.length === 0) return;
+    fetchCredits();
+    setPhase("confirm");
+  }, [selectedFiles.length, fetchCredits]);
+
+  const goBackToSelect = useCallback(() => {
+    setPhase("select");
+  }, []);
+
+  const startUpload = useCallback(async () => {
+    if (isUploading) return;
+    setIsUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("eventId", id);
+      selectedFiles.forEach((sf) => {
+        formData.append("files", sf.file);
+      });
+
+      const res = await fetch("/api/photos/batch-upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (data.code === "INSUFFICIENT_CREDITS") {
+          toast({
+            title: "Credits insuffisants",
+            description: `Vous avez ${credits} credits, il en faut ${selectedFiles.length}.`,
+            variant: "destructive",
+          });
+          setIsUploading(false);
+          return;
+        }
+        throw new Error(data.error || "Erreur lors de l'upload");
+      }
+
+      setSessionId(data.sessionId);
+      setPhase("processing");
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: error instanceof Error ? error.message : "Erreur inconnue",
+        variant: "destructive",
+      });
+      setIsUploading(false);
+    }
+  }, [id, selectedFiles, credits, isUploading, toast]);
 
   if (status === "loading" || isLoading) {
     return (
@@ -175,25 +216,35 @@ export default function UploadPage({
     );
   }
 
-  if (!event) {
-    return null;
+  if (!event) return null;
+
+  // Phase: Processing
+  if (phase === "processing" && sessionId) {
+    return (
+      <ProcessingScreen
+        sessionId={sessionId}
+        eventId={id}
+        totalPhotos={selectedFiles.length}
+      />
+    );
   }
 
-  const completedUploads = uploads.filter((u) => u.status === "done").length;
-  const totalUploads = uploads.length;
+  // Phase: Confirm
+  if (phase === "confirm") {
+    const hasEnoughCredits = credits >= selectedFiles.length;
 
-  return (
-    <div className="p-8 max-w-4xl animate-fade-in">
-      <Link
-        href={`/photographer/events/${id}`}
-        className="text-orange hover:text-orange-dark transition-colors mb-4 inline-block"
-      >
-        &larr; Retour a l&apos;evenement
-      </Link>
+    return (
+      <div className="p-8 max-w-2xl mx-auto animate-fade-in">
+        <button
+          onClick={goBackToSelect}
+          className="text-orange-500 hover:text-orange-600 transition-colors mb-4 inline-block text-sm"
+        >
+          &larr; Retour a la selection
+        </button>
 
-        <Card className="mb-8 bg-white border-0 shadow-sm rounded-2xl">
+        <Card className="bg-white border-0 shadow-sm rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-gray-900">Ajouter des photos</CardTitle>
+            <CardTitle className="text-gray-900">Confirmer l&apos;import</CardTitle>
             <CardDescription>
               {event.name} •{" "}
               {new Date(event.date).toLocaleDateString("fr-FR", {
@@ -203,127 +254,227 @@ export default function UploadPage({
               })}
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div
-              className={`border-2 border-dashed rounded-2xl p-12 text-center transition-colors ${
-                isDragging
-                  ? "border-orange bg-orange-50"
-                  : "border-orange/30 hover:border-orange/50"
-              }`}
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-            >
-              <input
-                type="file"
-                id="file-input"
-                className="hidden"
-                multiple
-                accept="image/*"
-                onChange={handleFileInput}
-              />
-              <label
-                htmlFor="file-input"
-                className="cursor-pointer block"
-              >
-                <div className="text-muted-foreground mb-4">
-                  <svg
-                    className="mx-auto h-12 w-12"
-                    stroke="currentColor"
-                    fill="none"
-                    viewBox="0 0 48 48"
-                  >
-                    <path
-                      d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+          <CardContent className="space-y-6">
+            {/* Summary */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 rounded-xl bg-gray-50 text-center">
+                <p className="text-3xl font-bold text-gray-900">{selectedFiles.length}</p>
+                <p className="text-sm text-gray-500 mt-1">photos</p>
+              </div>
+              <div className="p-4 rounded-xl bg-gray-50 text-center">
+                <p className="text-3xl font-bold text-orange-500">{selectedFiles.length}</p>
+                <p className="text-sm text-gray-500 mt-1">credits necessaires</p>
+              </div>
+            </div>
+
+            {/* Balance */}
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-700">Votre solde</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl font-bold text-gray-900">
+                    {credits.toLocaleString("fr-FR")} credits
+                  </span>
+                  {isTestMode && (
+                    <Badge className="bg-emerald-100 text-emerald-700 border-0 text-xs">
+                      Mode test
+                    </Badge>
+                  )}
                 </div>
-                <p className="text-lg font-medium text-gray-900 mb-2">
-                  Glissez-déposez vos photos ici
-                </p>
-                <p className="text-muted-foreground mb-4">ou cliquez pour sélectionner</p>
-                <Button type="button" variant="outline" className="border-orange/30 text-orange hover:bg-orange-50">
-                  Sélectionner des fichiers
-                </Button>
-              </label>
+              </div>
+            </div>
+
+            {/* Info */}
+            <div className="p-4 rounded-xl bg-blue-50 border border-blue-100 text-sm text-blue-700">
+              Les credits des photos orphelines (sans dossard detecte) vous seront automatiquement restitues.
+            </div>
+
+            {/* Insufficient credits warning */}
+            {!hasEnoughCredits && (
+              <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-sm text-red-700">
+                <p className="font-medium mb-1">Credits insuffisants</p>
+                <p>Il vous manque {selectedFiles.length - credits} credits.</p>
+                <Link
+                  href="/photographer/credits"
+                  className="inline-block mt-2 text-red-800 underline font-medium"
+                >
+                  Recharger vos credits
+                </Link>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="outline"
+                onClick={goBackToSelect}
+                className="flex-1 border-gray-200 text-gray-700 rounded-xl"
+              >
+                Retour
+              </Button>
+              <Button
+                onClick={startUpload}
+                disabled={!hasEnoughCredits || isUploading}
+                className="flex-1 bg-orange-500 hover:bg-orange-600 text-white rounded-xl shadow-lg shadow-orange-500/20 disabled:opacity-50"
+              >
+                {isUploading ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Upload en cours...
+                  </span>
+                ) : (
+                  `Valider l'import (${selectedFiles.length} credits)`
+                )}
+              </Button>
             </div>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
 
-        {uploads.length > 0 && (
-          <Card className="bg-white border-0 shadow-sm rounded-2xl">
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle className="text-gray-900">Progression</CardTitle>
-                <Badge variant="secondary">
-                  {completedUploads}/{totalUploads} terminé
-                  {completedUploads !== 1 ? "s" : ""}
-                </Badge>
+  // Phase: Select (default)
+  return (
+    <div className="p-8 max-w-4xl animate-fade-in">
+      <Link
+        href={`/photographer/events/${id}`}
+        className="text-orange-500 hover:text-orange-600 transition-colors mb-4 inline-block"
+      >
+        &larr; Retour a l&apos;evenement
+      </Link>
+
+      <Card className="mb-6 bg-white border-0 shadow-sm rounded-2xl">
+        <CardHeader>
+          <CardTitle className="text-gray-900">Ajouter des photos</CardTitle>
+          <CardDescription>
+            {event.name} •{" "}
+            {new Date(event.date).toLocaleDateString("fr-FR", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div
+            className={`border-2 border-dashed rounded-2xl p-12 text-center transition-colors ${
+              isDragging
+                ? "border-orange-500 bg-orange-50"
+                : "border-orange-200 hover:border-orange-300"
+            }`}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              id="file-input"
+              className="hidden"
+              multiple
+              accept="image/*"
+              onChange={handleFileInput}
+            />
+            <label htmlFor="file-input" className="cursor-pointer block">
+              <div className="text-muted-foreground mb-4">
+                <svg
+                  className="mx-auto h-12 w-12"
+                  stroke="currentColor"
+                  fill="none"
+                  viewBox="0 0 48 48"
+                >
+                  <path
+                    d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {uploads.map((upload, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-4 p-3 bg-white/50 rounded-lg"
+              <p className="text-lg font-medium text-gray-900 mb-2">
+                Glissez-deposez vos photos ici
+              </p>
+              <p className="text-muted-foreground mb-4">ou cliquez pour selectionner</p>
+              <Button type="button" variant="outline" className="border-orange-200 text-orange-500 hover:bg-orange-50">
+                Selectionner des fichiers
+              </Button>
+            </label>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Selected files grid */}
+      {selectedFiles.length > 0 && (
+        <Card className="bg-white border-0 shadow-sm rounded-2xl">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-gray-900">
+                {selectedFiles.length} photo{selectedFiles.length > 1 ? "s" : ""} selectionnee{selectedFiles.length > 1 ? "s" : ""}
+              </CardTitle>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-orange-200 text-orange-500 hover:bg-orange-50 rounded-lg"
+                >
+                  + Ajouter
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    selectedFiles.forEach((sf) => URL.revokeObjectURL(sf.previewUrl));
+                    setSelectedFiles([]);
+                  }}
+                  className="border-red-200 text-red-500 hover:bg-red-50 rounded-lg"
+                >
+                  Tout retirer
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 mb-6">
+              {selectedFiles.map((sf, index) => (
+                <div key={index} className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100">
+                  <Image
+                    src={sf.previewUrl}
+                    alt={sf.file.name}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                  <button
+                    onClick={() => removeFile(index)}
+                    className="absolute top-1 right-1 w-6 h-6 bg-black/60 hover:bg-red-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                   >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {upload.file.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {(upload.file.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {upload.status === "pending" && (
-                        <Badge variant="secondary">En attente</Badge>
-                      )}
-                      {upload.status === "uploading" && (
-                        <Badge variant="outline">Upload...</Badge>
-                      )}
-                      {upload.status === "processing" && (
-                        <Badge variant="outline">Analyse OCR...</Badge>
-                      )}
-                      {upload.status === "done" && (
-                        <>
-                          <Badge variant="default" className="bg-orange">
-                            Terminé
-                          </Badge>
-                          {upload.bibNumbers && upload.bibNumbers.length > 0 && (
-                            <span className="text-xs text-muted-foreground">
-                              Dossards: {upload.bibNumbers.join(", ")}
-                            </span>
-                          )}
-                        </>
-                      )}
-                      {upload.status === "error" && (
-                        <Badge variant="destructive">
-                          Erreur: {upload.error}
-                        </Badge>
-                      )}
-                    </div>
+                    ✕
+                  </button>
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-1">
+                    <p className="text-[10px] text-white truncate">{sf.file.name}</p>
                   </div>
-                ))}
-              </div>
-
-              {completedUploads === totalUploads && totalUploads > 0 && (
-                <div className="mt-6 text-center">
-                  <p className="text-orange font-medium mb-4">
-                    Tous les uploads sont terminés !
-                  </p>
-                  <Link href={`/photographer/events/${id}`}>
-                    <Button className="bg-orange hover:bg-orange-dark text-white shadow-orange transition-all duration-200">Voir les photos</Button>
-                  </Link>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+              ))}
+            </div>
+
+            <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+              <p className="text-sm text-gray-500">
+                {selectedFiles.length} photo{selectedFiles.length > 1 ? "s" : ""} = {selectedFiles.length} credit{selectedFiles.length > 1 ? "s" : ""}
+              </p>
+              <Button
+                onClick={goToConfirm}
+                className="bg-orange-500 hover:bg-orange-600 text-white rounded-xl px-8 shadow-lg shadow-orange-500/20"
+              >
+                Continuer
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

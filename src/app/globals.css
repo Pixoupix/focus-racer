@@ -141,9 +141,9 @@
   }
 
   .btn-secondary {
-    @apply bg-white text-blue border border-blue font-medium px-4 py-2 rounded-lg
+    @apply bg-white text-orange border border-orange/30 font-medium px-4 py-2 rounded-lg
            transition-all duration-200 ease-out
-           hover:bg-blue-50
+           hover:bg-orange-50
            active:scale-[0.98];
   }
 
@@ -208,7 +208,7 @@
     @apply w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5
            text-primary placeholder:text-secondary
            transition-all duration-200
-           focus:outline-none focus:ring-2 focus:ring-blue/20 focus:border-blue;
+           focus:outline-none focus:ring-2 focus:ring-orange/20 focus:border-orange;
   }
 
   /* ===== SKELETON LOADING ===== */

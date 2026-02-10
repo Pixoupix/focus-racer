@@ -19,10 +19,10 @@ async function main() {
   });
   console.log(`Admin created: ${admin.email}`);
 
-  // Photographer
+  // Photographer (with test credits)
   const photographer = await prisma.user.upsert({
     where: { email: "photographe@test.com" },
-    update: {},
+    update: { credits: 999999 },
     create: {
       email: "photographe@test.com",
       password: await bcrypt.hash("photo123", 10),
@@ -30,6 +30,7 @@ async function main() {
       role: UserRole.PHOTOGRAPHER,
       company: "Photo Sport Pro",
       phone: "+33 6 12 34 56 78",
+      credits: 999999,
     },
   });
   console.log(`Photographer created: ${photographer.email}`);

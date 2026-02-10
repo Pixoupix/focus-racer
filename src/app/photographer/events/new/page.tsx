@@ -95,7 +95,7 @@ export default function NewEventPage() {
     <div className="p-8 max-w-2xl animate-fade-in">
       <Link
         href="/photographer/events"
-        className="text-blue hover:text-blue-700 transition-colors mb-4 inline-block"
+        className="text-orange hover:text-orange-dark transition-colors mb-4 inline-block"
       >
         &larr; Retour aux evenements
       </Link>

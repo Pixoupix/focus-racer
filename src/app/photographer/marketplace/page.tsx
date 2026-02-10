@@ -149,7 +149,7 @@ export default function PhotographerMarketplacePage() {
           placeholder="Rechercher par titre ou lieu..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="bg-white max-w-md border-gray-200 rounded-lg focus:ring-2 focus:ring-blue/20 focus:border-blue"
+          className="bg-white max-w-md border-gray-200 rounded-lg focus:ring-2 focus:ring-orange/20 focus:border-orange"
         />
       </div>
 
@@ -237,7 +237,7 @@ export default function PhotographerMarketplacePage() {
                         <div className="space-y-2">
                           <Label className="text-gray-700">Message de candidature</Label>
                           <textarea
-                            className="flex min-h-[100px] w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue/20 focus:border-blue transition-all"
+                            className="flex min-h-[100px] w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange/20 focus:border-orange transition-all"
                             placeholder="Presentez-vous et expliquez pourquoi vous etes le bon photographe pour cette mission..."
                             value={applyMessage}
                             onChange={(e) => setApplyMessage(e.target.value)}
@@ -250,7 +250,7 @@ export default function PhotographerMarketplacePage() {
                             placeholder="Votre tarif pour cette mission"
                             value={applyRate}
                             onChange={(e) => setApplyRate(e.target.value)}
-                            className="bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue/20 focus:border-blue"
+                            className="bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange/20 focus:border-orange"
                           />
                         </div>
                         <Button

@@ -96,7 +96,7 @@ export default function EventsListPage() {
             placeholder="Rechercher un evenement..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-white border-gray-200 rounded-lg focus:ring-2 focus:ring-blue/20 focus:border-blue transition-all"
+            className="bg-white border-gray-200 rounded-lg focus:ring-2 focus:ring-orange/20 focus:border-orange transition-all"
           />
         </div>
         <div className="flex gap-2">
@@ -113,7 +113,7 @@ export default function EventsListPage() {
               onClick={() => setStatusFilter(f.value)}
               className={
                 statusFilter === f.value
-                  ? "bg-blue hover:bg-blue-hover text-white rounded-lg"
+                  ? "bg-orange hover:bg-orange-hover text-white rounded-lg"
                   : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50 rounded-lg"
               }
             >
@@ -162,7 +162,7 @@ export default function EventsListPage() {
               <Card className="bg-white border-0 shadow-card rounded-xl hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200 cursor-pointer h-full">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue to-blue-700 flex items-center justify-center text-white font-bold text-lg shadow-blue">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange to-orange-700 flex items-center justify-center text-white font-bold text-lg shadow-orange">
                       {event.name.charAt(0)}
                     </div>
                     <span className={`text-xs font-medium px-2.5 py-1 rounded-md ${

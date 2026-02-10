@@ -454,7 +454,7 @@ export default function EventDetailPage({
                     size="sm"
                     onClick={handleClusterFaces}
                     disabled={isClustering}
-                    className="text-emerald-600 border-emerald-300 hover:bg-emerald-50 transition-all duration-200"
+                    className="text-orange border-orange/30 hover:bg-orange-50 transition-all duration-200"
                     title={`${clusteringStats.orphanPhotos} photos sans dossard peuvent etre associees par reconnaissance faciale`}
                   >
                     {isClustering

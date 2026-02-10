@@ -178,7 +178,7 @@ export default function DashboardPage() {
                 <CardDescription className="text-gray-500">Vos derniers evenements crees</CardDescription>
               </div>
               <Link href="/photographer/events">
-                <Button variant="outline" size="sm" className="text-blue border-blue hover:bg-blue-50 rounded-lg">
+                <Button variant="outline" size="sm" className="text-orange border-orange/30 hover:bg-orange-50 rounded-lg">
                   Voir tout
                 </Button>
               </Link>
@@ -213,7 +213,7 @@ export default function DashboardPage() {
                       className="flex items-center justify-between p-4 rounded-xl bg-gray-50 hover:bg-gray-100 hover:-translate-y-0.5 hover:shadow-sm transition-all duration-200"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue font-bold text-sm">
+                        <div className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center text-orange font-bold text-sm">
                           {event.name.charAt(0)}
                         </div>
                         <div>

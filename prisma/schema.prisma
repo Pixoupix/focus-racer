@@ -64,12 +64,14 @@ model User {
   bio              String?
   portfolio        String?
   location         String?
+  credits          Int       @default(0)
   avgRating        Float     @default(0)
   totalReviews     Int       @default(0)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
   events           Event[]
   orders           Order[]
+  creditTransactions CreditTransaction[]
   createdListings    MarketplaceListing[]  @relation("ListingCreator")
   applicationsAsPh   MarketplaceApplication[] @relation("ApplicationPhotographer")
   reviewsGiven       MarketplaceReview[]  @relation("ReviewAuthor")
@@ -123,9 +125,11 @@ model Photo {
   autoEdited    Boolean     @default(false)
   labels        String?
   faceIndexed   Boolean     @default(false)
-  ocrProvider   String?
-  processedAt   DateTime?
-  createdAt     DateTime    @default(now())
+  ocrProvider      String?
+  processedAt      DateTime?
+  creditDeducted   Boolean     @default(false)
+  creditRefunded   Boolean     @default(false)
+  createdAt        DateTime    @default(now())
 
   @@index([eventId])
 }
@@ -270,6 +274,32 @@ model GdprAuditLog {
   createdAt   DateTime    @default(now())
 
   @@index([requestId])
+}
+
+// =========== CREDITS ===========
+
+enum TransactionType {
+  PURCHASE
+  DEDUCTION
+  REFUND
+  ADMIN_GRANT
+}
+
+model CreditTransaction {
+  id            String          @id @default(cuid())
+  userId        String
+  user          User            @relation(fields: [userId], references: [id])
+  type          TransactionType
+  amount        Int
+  balanceBefore Int
+  balanceAfter  Int
+  reason        String?
+  photoId       String?
+  eventId       String?
+  createdAt     DateTime        @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
 }
 
 // =========== MARKETPLACE ===========

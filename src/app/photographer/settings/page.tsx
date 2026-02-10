@@ -56,7 +56,7 @@ export default function SettingsPage() {
           <CardContent>
             <form onSubmit={handleSaveProfile} className="space-y-4">
               <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue to-blue-700 flex items-center justify-center text-white text-xl font-bold shadow-blue">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-orange to-orange-600 flex items-center justify-center text-white text-xl font-bold shadow-orange">
                   {session?.user?.name
                     ?.split(" ")
                     .map((n) => n[0])
@@ -66,7 +66,7 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <p className="font-medium text-gray-900">{session?.user?.name}</p>
-                  <span className="inline-block mt-1 text-xs font-medium bg-blue-50 text-blue px-2.5 py-1 rounded-md">
+                  <span className="inline-block mt-1 text-xs font-medium bg-orange-50 text-orange px-2.5 py-1 rounded-md">
                     {getRoleLabel(session?.user?.role || "")}
                   </span>
                 </div>
@@ -79,7 +79,7 @@ export default function SettingsPage() {
                     id="name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue/20 focus:border-blue"
+                    className="bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange/20 focus:border-orange"
                   />
                 </div>
                 <div className="space-y-2">
@@ -89,7 +89,7 @@ export default function SettingsPage() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue/20 focus:border-blue"
+                    className="bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange/20 focus:border-orange"
                   />
                 </div>
                 <div className="space-y-2">
@@ -99,7 +99,7 @@ export default function SettingsPage() {
                     value={company}
                     onChange={(e) => setCompany(e.target.value)}
                     placeholder="Votre entreprise"
-                    className="bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue/20 focus:border-blue"
+                    className="bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange/20 focus:border-orange"
                   />
                 </div>
                 <div className="space-y-2">
@@ -110,7 +110,7 @@ export default function SettingsPage() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+33 6 12 34 56 78"
-                    className="bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue/20 focus:border-blue"
+                    className="bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange/20 focus:border-orange"
                   />
                 </div>
               </div>
@@ -141,7 +141,7 @@ export default function SettingsPage() {
                 <Input
                   id="current-password"
                   type="password"
-                  className="bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue/20 focus:border-blue"
+                  className="bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange/20 focus:border-orange"
                 />
               </div>
               <div className="space-y-2">
@@ -149,7 +149,7 @@ export default function SettingsPage() {
                 <Input
                   id="new-password"
                   type="password"
-                  className="bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue/20 focus:border-blue"
+                  className="bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange/20 focus:border-orange"
                 />
               </div>
               <div className="space-y-2">
@@ -157,16 +157,17 @@ export default function SettingsPage() {
                 <Input
                   id="confirm-password"
                   type="password"
-                  className="bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue/20 focus:border-blue"
+                  className="bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange/20 focus:border-orange"
                 />
               </div>
               <div className="flex justify-end pt-2">
                 <Button
                   variant="outline"
-                  className="text-blue border-blue hover:bg-blue-50 rounded-lg"
+                  className="text-orange border-orange/30 hover:bg-orange-50 rounded-lg"
                 >
                   Modifier le mot de passe
                 </Button>
+
               </div>
             </div>
           </CardContent>
@@ -192,7 +193,7 @@ export default function SettingsPage() {
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" className="sr-only peer" defaultChecked />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-orange/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange"></div>
                   </label>
                 </div>
               ))}

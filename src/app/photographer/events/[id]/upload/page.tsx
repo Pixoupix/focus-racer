@@ -432,10 +432,12 @@ export default function UploadPage({
               </div>
             </div>
 
-            {/* Info */}
-            <div className="p-4 rounded-xl bg-teal-50 border border-teal-100 text-sm text-teal-700">
-              Les credits des photos orphelines (sans dossard detecte) vous seront automatiquement restitues.
-            </div>
+            {/* Info credits refund - Premium only */}
+            {ocrProvider === "aws" && (
+              <div className="p-4 rounded-xl bg-teal-50 border border-teal-100 text-sm text-teal-700">
+                Les credits des photos orphelines (sans dossard detecte) vous seront automatiquement restitues.
+              </div>
+            )}
 
             {/* Insufficient credits warning */}
             {!hasEnoughCredits && (

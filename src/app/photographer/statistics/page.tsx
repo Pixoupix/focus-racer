@@ -165,7 +165,7 @@ export default function StatisticsPage() {
                   </div>
                 </div>
                 <p className="text-sm text-gray-500 mt-2">
-                  Commission: 15%
+                  Revenus totaux
                 </p>
               </CardContent>
             </Card>

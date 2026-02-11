@@ -26,44 +26,49 @@ async function processPhotoWithProgress(
   ocrProvider?: "aws" | "tesseract",
   creditsPerPhoto: number = 1
 ) {
+  const isPremium = ocrProvider === "aws";
+
   try {
     const webFullPath = await getUploadedFilePath(webFilePath);
 
-    updateUploadProgress(sessionId, {
-      currentStep: `Analyse qualite (${photoIndex + 1}/${totalPhotos})`,
-    });
+    // Premium only: quality analysis, auto-edit, watermark
+    if (isPremium) {
+      updateUploadProgress(sessionId, {
+        currentStep: `Analyse qualite (${photoIndex + 1}/${totalPhotos})`,
+      });
 
-    // 1. Quality analysis
-    const quality = await analyzeQuality(webFullPath);
-    await prisma.photo.update({
-      where: { id: photoId },
-      data: { qualityScore: quality.score, isBlurry: quality.isBlurry },
-    });
-
-    // 2. Auto-edit
-    if (!quality.isBlurry && aiConfig.autoEditEnabled) {
-      const wasEdited = await autoEditImage(webFullPath);
-      if (wasEdited) {
-        await prisma.photo.update({
-          where: { id: photoId },
-          data: { autoEdited: true },
-        });
-      }
-    }
-
-    // 3. Watermark
-    try {
-      const thumbnailPath = await generateWatermarkedThumbnail(
-        eventId,
-        webFilePath,
-        eventName || "FOCUS RACER"
-      );
+      // 1. Quality analysis
+      const quality = await analyzeQuality(webFullPath);
       await prisma.photo.update({
         where: { id: photoId },
-        data: { thumbnailPath },
+        data: { qualityScore: quality.score, isBlurry: quality.isBlurry },
       });
-    } catch (err) {
-      console.error(`[Batch] Watermark error for ${photoId}:`, err);
+
+      // 2. Auto-edit
+      if (!quality.isBlurry && aiConfig.autoEditEnabled) {
+        const wasEdited = await autoEditImage(webFullPath);
+        if (wasEdited) {
+          await prisma.photo.update({
+            where: { id: photoId },
+            data: { autoEdited: true },
+          });
+        }
+      }
+
+      // 3. Watermark
+      try {
+        const thumbnailPath = await generateWatermarkedThumbnail(
+          eventId,
+          webFilePath,
+          eventName || "FOCUS RACER"
+        );
+        await prisma.photo.update({
+          where: { id: photoId },
+          data: { thumbnailPath },
+        });
+      } catch (err) {
+        console.error(`[Batch] Watermark error for ${photoId}:`, err);
+      }
     }
 
     updateUploadProgress(sessionId, {
@@ -158,8 +163,8 @@ async function processPhotoWithProgress(
       }
     }
 
-    // 5. Face indexing
-    if (aiConfig.faceIndexEnabled) {
+    // 5. Face indexing (Premium only)
+    if (isPremium && aiConfig.faceIndexEnabled) {
       updateUploadProgress(sessionId, {
         currentStep: `Reconnaissance faciale (${photoIndex + 1}/${totalPhotos})`,
       });
@@ -184,8 +189,8 @@ async function processPhotoWithProgress(
       }
     }
 
-    // 6. Label detection
-    if (aiConfig.labelDetectionEnabled) {
+    // 6. Label detection (Premium only)
+    if (isPremium && aiConfig.labelDetectionEnabled) {
       try {
         const labels = await detectLabels(webFullPath, 15, 60);
         if (labels.length > 0) {

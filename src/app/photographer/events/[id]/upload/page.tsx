@@ -270,9 +270,9 @@ export default function UploadPage({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* OCR Provider choice */}
+            {/* Plan choice */}
             <div>
-              <p className="text-sm font-medium text-gray-900 mb-3">Methode de detection des dossards</p>
+              <p className="text-sm font-medium text-gray-900 mb-3">Choisissez votre formule</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Free */}
                 <button
@@ -295,10 +295,36 @@ export default function UploadPage({
                     <span className="text-lg font-bold text-gray-900">Gratuit</span>
                     <Badge className="bg-gray-100 text-gray-600 border-0 text-[10px]">1 credit/photo</Badge>
                   </div>
-                  <p className="text-xs text-gray-500 leading-relaxed">
-                    {formatTime(Math.round(selectedFiles.length * 3.5))} pour {selectedFiles.length} photo{selectedFiles.length > 1 ? "s" : ""}. Taux de reussite : ~70-85%.
+                  <p className="text-xs text-gray-500 leading-relaxed mb-3">
+                    Detection basique des dossards. Photos compressees pour un traitement leger.
                   </p>
-                  <div className="flex items-center gap-3 mt-3 text-[11px]">
+                  <ul className="space-y-1.5 text-[11px] mb-3">
+                    <li className="flex items-center gap-1.5 text-gray-500">
+                      <svg className="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                      Detection des dossards (OCR)
+                    </li>
+                    <li className="flex items-center gap-1.5 text-gray-500">
+                      <svg className="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                      Compression des photos
+                    </li>
+                    <li className="flex items-center gap-1.5 text-gray-300">
+                      <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                      <span className="line-through">Retouche auto (exposition, contraste)</span>
+                    </li>
+                    <li className="flex items-center gap-1.5 text-gray-300">
+                      <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                      <span className="line-through">Watermark professionnel</span>
+                    </li>
+                    <li className="flex items-center gap-1.5 text-gray-300">
+                      <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                      <span className="line-through">Reconnaissance faciale</span>
+                    </li>
+                    <li className="flex items-center gap-1.5 text-gray-300">
+                      <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                      <span className="line-through">Detection vetements</span>
+                    </li>
+                  </ul>
+                  <div className="flex items-center gap-3 text-[11px] pt-2 border-t border-gray-100">
                     <span className="flex items-center gap-1 text-gray-400">
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                       {formatTime(Math.round(selectedFiles.length * 3.5))}
@@ -316,30 +342,59 @@ export default function UploadPage({
                   onClick={() => setOcrProvider("aws")}
                   className={`relative p-4 rounded-xl border-2 text-left transition-all ${
                     ocrProvider === "aws"
-                      ? "border-emerald-500 bg-emerald-50/50 shadow-sm"
-                      : "border-gray-200 hover:border-gray-300 bg-white"
+                      ? "border-amber-500 bg-amber-50/50 shadow-sm ring-1 ring-amber-200"
+                      : "border-gray-200 hover:border-amber-300 bg-white"
                   }`}
                 >
+                  <div className="absolute -top-2.5 left-4">
+                    <Badge className="bg-amber-500 text-white border-0 text-[10px] shadow-sm">Recommande</Badge>
+                  </div>
                   {ocrProvider === "aws" && (
-                    <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
+                    <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center">
                       <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                       </svg>
                     </div>
                   )}
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-2 mt-1">
                     <span className="text-lg font-bold text-gray-900">Premium</span>
                     <Badge className="bg-amber-100 text-amber-700 border-0 text-[10px]">3 credits/photo</Badge>
                   </div>
-                  <p className="text-xs text-gray-500 leading-relaxed">
-                    {formatTime(Math.round(selectedFiles.length * 0.3))} pour {selectedFiles.length} photo{selectedFiles.length > 1 ? "s" : ""}. Taux de reussite : ~95-99%.
+                  <p className="text-xs text-gray-500 leading-relaxed mb-3">
+                    Traitement IA complet. Retouche, watermark, tri par dossard, visage et vetements.
                   </p>
-                  <div className="flex items-center gap-3 mt-3 text-[11px]">
-                    <span className="flex items-center gap-1 text-gray-400">
+                  <ul className="space-y-1.5 text-[11px] mb-3">
+                    <li className="flex items-center gap-1.5 text-gray-600 font-medium">
+                      <svg className="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                      Detection des dossards (OCR haute precision)
+                    </li>
+                    <li className="flex items-center gap-1.5 text-gray-600 font-medium">
+                      <svg className="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                      Analyse qualite + filtrage photos floues
+                    </li>
+                    <li className="flex items-center gap-1.5 text-gray-600 font-medium">
+                      <svg className="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                      Retouche auto (exposition, contraste, nettete)
+                    </li>
+                    <li className="flex items-center gap-1.5 text-gray-600 font-medium">
+                      <svg className="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                      Watermark professionnel
+                    </li>
+                    <li className="flex items-center gap-1.5 text-gray-600 font-medium">
+                      <svg className="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                      Reconnaissance faciale (recherche par selfie)
+                    </li>
+                    <li className="flex items-center gap-1.5 text-gray-600 font-medium">
+                      <svg className="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                      Detection vetements et accessoires
+                    </li>
+                  </ul>
+                  <div className="flex items-center gap-3 text-[11px] pt-2 border-t border-amber-100">
+                    <span className="flex items-center gap-1 text-amber-600">
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
                       {formatTime(Math.round(selectedFiles.length * 0.3))}
                     </span>
-                    <span className="flex items-center gap-1 text-gray-400">
+                    <span className="flex items-center gap-1 text-amber-600">
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                       ~95-99%
                     </span>

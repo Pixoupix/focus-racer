@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { getFactForMilestone } from "@/lib/runner-facts";
 import Link from "next/link";
+import BibRunner from "@/components/game/bib-runner";
 
 interface ProcessingScreenProps {
   sessionId: string;
@@ -114,47 +115,12 @@ export default function ProcessingScreen({
         </p>
       </div>
 
-      {/* Running track */}
-      <div className="w-full max-w-2xl px-8 mb-8 relative z-10">
-        {/* Track */}
-        <div className="relative h-24 mb-4">
-          {/* Track surface */}
-          <div className="absolute bottom-0 left-0 right-0 h-16 bg-emerald-900/30 rounded-xl border border-emerald-800/30 overflow-hidden">
-            {/* Lane lines */}
-            <div className="absolute inset-0 flex items-center justify-between px-4">
-              {[...Array(11)].map((_, i) => (
-                <div
-                  key={i}
-                  className="w-px h-8 bg-white/10"
-                />
-              ))}
-            </div>
-            {/* Distance markers */}
-            <div className="absolute bottom-1 left-0 right-0 flex justify-between px-3 text-[10px] text-emerald-400/50">
-              <span>0%</span>
-              <span>25%</span>
-              <span>50%</span>
-              <span>75%</span>
-              <span>100%</span>
-            </div>
-          </div>
-
-          {/* Runner */}
-          <div
-            className="absolute bottom-10 transition-all duration-700 ease-out"
-            style={{ left: `calc(${runnerPosition}% - 16px)` }}
-          >
-            <div className={`text-3xl ${!progress.complete ? "runner-bounce" : ""}`}>
-              {progress.complete ? "🏆" : "🏃"}
-            </div>
-          </div>
-
-          {/* Finish line */}
-          <div className="absolute bottom-0 right-0 h-16 w-1 bg-gradient-to-b from-white to-white/50" />
-        </div>
+      {/* Bib Runner Game */}
+      <div className="w-full max-w-2xl px-8 mb-6 relative z-10">
+        <BibRunner progress={progress.percent} isComplete={progress.complete} />
 
         {/* Progress bar */}
-        <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
+        <div className="h-3 bg-slate-700 rounded-full overflow-hidden mt-4">
           <div
             className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-700 ease-out"
             style={{ width: `${runnerPosition}%` }}
@@ -222,13 +188,6 @@ export default function ProcessingScreen({
 
       {/* Inline styles for animations */}
       <style jsx>{`
-        .runner-bounce {
-          animation: runBounce 0.5s ease-in-out infinite alternate;
-        }
-        @keyframes runBounce {
-          from { transform: translateY(0); }
-          to { transform: translateY(-6px); }
-        }
         .confetti-piece {
           width: 8px;
           height: 8px;

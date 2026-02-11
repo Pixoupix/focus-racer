@@ -30,11 +30,21 @@ async function processPhotoWithProgress(
 
   try {
     const webFullPath = await getUploadedFilePath(webFilePath);
+    const label = `${photoIndex + 1}/${totalPhotos}`;
+
+    // Free mode: compression step indicator
+    if (!isPremium) {
+      updateUploadProgress(sessionId, {
+        currentStep: `Compression photo ${label}`,
+      });
+      // Small delay so SSE can push the update before OCR starts
+      await new Promise((r) => setTimeout(r, 50));
+    }
 
     // Premium only: quality analysis, auto-edit, watermark
     if (isPremium) {
       updateUploadProgress(sessionId, {
-        currentStep: `Analyse qualite (${photoIndex + 1}/${totalPhotos})`,
+        currentStep: `Analyse qualite ${label}`,
       });
 
       // 1. Quality analysis
@@ -45,6 +55,9 @@ async function processPhotoWithProgress(
       });
 
       // 2. Auto-edit
+      updateUploadProgress(sessionId, {
+        currentStep: `Retouche auto ${label}`,
+      });
       if (!quality.isBlurry && aiConfig.autoEditEnabled) {
         const wasEdited = await autoEditImage(webFullPath);
         if (wasEdited) {
@@ -56,6 +69,9 @@ async function processPhotoWithProgress(
       }
 
       // 3. Watermark
+      updateUploadProgress(sessionId, {
+        currentStep: `Watermark ${label}`,
+      });
       try {
         const thumbnailPath = await generateWatermarkedThumbnail(
           eventId,
@@ -72,7 +88,7 @@ async function processPhotoWithProgress(
     }
 
     updateUploadProgress(sessionId, {
-      currentStep: `OCR dossards (${photoIndex + 1}/${totalPhotos})`,
+      currentStep: `Analyse dossard ${label}`,
     });
 
     // 4. OCR
@@ -166,7 +182,7 @@ async function processPhotoWithProgress(
     // 5. Face indexing (Premium only)
     if (isPremium && aiConfig.faceIndexEnabled) {
       updateUploadProgress(sessionId, {
-        currentStep: `Reconnaissance faciale (${photoIndex + 1}/${totalPhotos})`,
+        currentStep: `Reconnaissance faciale ${label}`,
       });
       try {
         const faces = await indexFaces(webFullPath, `${eventId}:${photoId}`);
@@ -191,6 +207,9 @@ async function processPhotoWithProgress(
 
     // 6. Label detection (Premium only)
     if (isPremium && aiConfig.labelDetectionEnabled) {
+      updateUploadProgress(sessionId, {
+        currentStep: `Detection labels ${label}`,
+      });
       try {
         const labels = await detectLabels(webFullPath, 15, 60);
         if (labels.length > 0) {
@@ -307,10 +326,16 @@ export async function POST(request: NextRequest) {
       creditsRemaining = creditResult.balanceAfter;
     }
 
+    // Create upload session for progress tracking (before saving so client can connect early)
+    const sessionId = createUploadSession(session.user.id, eventId, nbPhotos);
+
     // Save all files and create photo records
     const photos: { id: string; webPath: string; index: number }[] = [];
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
+      updateUploadProgress(sessionId, {
+        currentStep: `Sauvegarde fichier ${i + 1}/${files.length}`,
+      });
       const { filename, path, webPath, s3Key } = await saveFile(file, eventId);
 
       const photo = await prisma.photo.create({
@@ -327,9 +352,6 @@ export async function POST(request: NextRequest) {
 
       photos.push({ id: photo.id, webPath, index: i });
     }
-
-    // Create upload session for progress tracking
-    const sessionId = createUploadSession(session.user.id, eventId, nbPhotos);
 
     // Enqueue all photos for processing
     let processedCount = 0;

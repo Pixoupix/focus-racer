@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Event } from "@/types";
 import ProcessingScreen from "@/components/processing-screen";
 
-type Phase = "select" | "confirm" | "processing";
+type Phase = "select" | "confirm" | "uploading" | "processing";
 
 interface SelectedFile {
   file: File;
@@ -38,6 +38,7 @@ export default function UploadPage({
   const [isUploading, setIsUploading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [ocrProvider, setOcrProvider] = useState<"aws" | "tesseract">("tesseract");
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -166,48 +167,68 @@ export default function UploadPage({
     setPhase("select");
   }, []);
 
-  const startUpload = useCallback(async () => {
+  const startUpload = useCallback(() => {
     if (isUploading) return;
     setIsUploading(true);
+    setUploadProgress(0);
+    setPhase("uploading");
 
-    try {
-      const formData = new FormData();
-      formData.append("eventId", id);
-      formData.append("ocrProvider", ocrProvider);
-      selectedFiles.forEach((sf) => {
-        formData.append("files", sf.file);
-      });
+    const formData = new FormData();
+    formData.append("eventId", id);
+    formData.append("ocrProvider", ocrProvider);
+    selectedFiles.forEach((sf) => {
+      formData.append("files", sf.file);
+    });
 
-      const res = await fetch("/api/photos/batch-upload", {
-        method: "POST",
-        body: formData,
-      });
+    const xhr = new XMLHttpRequest();
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        if (data.code === "INSUFFICIENT_CREDITS") {
-          toast({
-            title: "Crédits insuffisants",
-            description: `Vous avez ${credits} credits, il en faut ${selectedFiles.length}.`,
-            variant: "destructive",
-          });
-          setIsUploading(false);
-          return;
-        }
-        throw new Error(data.error || "Erreur lors de l'upload");
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        setUploadProgress(Math.round((e.loaded / e.total) * 100));
       }
+    };
 
-      setSessionId(data.sessionId);
-      setPhase("processing");
-    } catch (error) {
+    xhr.onload = () => {
+      try {
+        const data = JSON.parse(xhr.responseText);
+        if (xhr.status >= 400) {
+          if (data.code === "INSUFFICIENT_CREDITS") {
+            toast({
+              title: "Credits insuffisants",
+              description: `Vous avez ${credits} credits, il en faut ${selectedFiles.length}.`,
+              variant: "destructive",
+            });
+            setIsUploading(false);
+            setPhase("confirm");
+            return;
+          }
+          throw new Error(data.error || "Erreur lors de l'upload");
+        }
+        setSessionId(data.sessionId);
+        setPhase("processing");
+      } catch (error) {
+        toast({
+          title: "Erreur",
+          description: error instanceof Error ? error.message : "Erreur inconnue",
+          variant: "destructive",
+        });
+        setIsUploading(false);
+        setPhase("confirm");
+      }
+    };
+
+    xhr.onerror = () => {
       toast({
         title: "Erreur",
-        description: error instanceof Error ? error.message : "Erreur inconnue",
+        description: "Erreur reseau lors de l'envoi",
         variant: "destructive",
       });
       setIsUploading(false);
-    }
+      setPhase("confirm");
+    };
+
+    xhr.open("POST", "/api/photos/batch-upload");
+    xhr.send(formData);
   }, [id, selectedFiles, credits, isUploading, ocrProvider, toast]);
 
   if (status === "loading" || isLoading) {
@@ -219,6 +240,54 @@ export default function UploadPage({
   }
 
   if (!event) return null;
+
+  // Phase: Uploading (network transfer)
+  if (phase === "uploading") {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white">
+        <div className="w-full max-w-md px-8 text-center">
+          {/* Animated upload icon */}
+          <div className="mb-6">
+            <svg
+              className="mx-auto h-16 w-16 text-emerald-400 upload-arrow-bounce"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+            </svg>
+          </div>
+
+          <h2 className="text-xl font-bold mb-2">
+            Envoi de {selectedFiles.length} photo{selectedFiles.length > 1 ? "s" : ""} au serveur...
+          </h2>
+          <p className="text-slate-400 text-sm mb-6">
+            Ne fermez pas cette page pendant l&apos;envoi
+          </p>
+
+          {/* Progress bar */}
+          <div className="h-4 bg-slate-700 rounded-full overflow-hidden mb-3">
+            <div
+              className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-300 ease-out"
+              style={{ width: `${uploadProgress}%` }}
+            />
+          </div>
+          <p className="text-emerald-400 font-bold text-lg">{uploadProgress}%</p>
+        </div>
+
+        <style jsx>{`
+          .upload-arrow-bounce {
+            animation: arrowBounce 1s ease-in-out infinite;
+          }
+          @keyframes arrowBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-12px); }
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   // Phase: Processing
   if (phase === "processing" && sessionId) {

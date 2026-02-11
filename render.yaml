@@ -13,7 +13,7 @@ services:
     startCommand: npx prisma migrate deploy && npx next start -p $PORT
     envVars:
       - key: NODE_VERSION
-        value: 20.11.0
+        value: "20"
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
@@ -26,29 +26,47 @@ services:
         sync: false
       - key: NEXT_PUBLIC_APP_URL
         sync: false
+      - key: UPLOAD_DIR
+        value: /opt/render/project/src/public/uploads
+      - key: PLATFORM_FEE_PERCENT
+        value: "10"
+      # Stripe
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_PUBLISHABLE_KEY
         sync: false
-      - key: STRIPE_WEBHOOK_SECRET
-        sync: false
       - key: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
         sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      # Email
       - key: RESEND_API_KEY
         sync: false
       - key: EMAIL_FROM
-        sync: false
+        value: "Focus Racer <noreply@focusracer.com>"
+      # AWS
       - key: AWS_REGION
-        sync: false
+        value: eu-west-1
       - key: AWS_ACCESS_KEY_ID
         sync: false
       - key: AWS_SECRET_ACCESS_KEY
         sync: false
       - key: AWS_REKOGNITION_COLLECTION_ID
-        sync: false
+        value: focusracer-faces
       - key: AWS_S3_BUCKET
         sync: false
       - key: AWS_CLOUDFRONT_URL
         sync: false
-      - key: UPLOAD_DIR
-        value: /opt/render/project/src/public/uploads
+      # AI config
+      - key: AI_OCR_CONFIDENCE_THRESHOLD
+        value: "70"
+      - key: AI_QUALITY_THRESHOLD
+        value: "30"
+      - key: AI_AUTO_EDIT_ENABLED
+        value: "true"
+      - key: AI_FACE_INDEX_ENABLED
+        value: "true"
+      - key: AI_LABEL_DETECTION_ENABLED
+        value: "true"
+      - key: AI_MAX_CONCURRENT
+        value: "4"

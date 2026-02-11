@@ -253,53 +253,58 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Non autorise" }, { status: 403 });
     }
 
-    // Check and deduct credits atomically
+    // Check and deduct credits atomically (premium only)
     const nbPhotos = files.length;
-    const creditsPerPhoto = ocrProvider === "aws" ? 3 : 1;
+    const creditsPerPhoto = ocrProvider === "aws" ? 3 : 0;
     const totalCredits = nbPhotos * creditsPerPhoto;
     const planLabel = ocrProvider === "aws" ? "Premium" : "Gratuit";
-    const creditResult = await prisma.$transaction(async (tx) => {
-      const user = await tx.user.findUnique({
-        where: { id: session.user.id },
-        select: { credits: true },
+    let creditsRemaining = 0;
+
+    if (totalCredits > 0) {
+      const creditResult = await prisma.$transaction(async (tx) => {
+        const user = await tx.user.findUnique({
+          where: { id: session.user.id },
+          select: { credits: true },
+        });
+
+        if (!user) throw new Error("User not found");
+        if (user.credits < totalCredits) {
+          throw new Error("INSUFFICIENT_CREDITS");
+        }
+
+        const balanceBefore = user.credits;
+        const balanceAfter = balanceBefore - totalCredits;
+
+        await tx.user.update({
+          where: { id: session.user.id },
+          data: { credits: balanceAfter },
+        });
+
+        await tx.creditTransaction.create({
+          data: {
+            userId: session.user.id,
+            type: "DEDUCTION",
+            amount: totalCredits,
+            balanceBefore,
+            balanceAfter,
+            reason: `Import ${planLabel} de ${nbPhotos} photo${nbPhotos > 1 ? "s" : ""} (${creditsPerPhoto} cr/photo) - ${event.name}`,
+            eventId,
+          },
+        });
+
+        return { balanceAfter };
+      }).catch((err) => {
+        if (err.message === "INSUFFICIENT_CREDITS") return null;
+        throw err;
       });
 
-      if (!user) throw new Error("User not found");
-      if (user.credits < totalCredits) {
-        throw new Error("INSUFFICIENT_CREDITS");
+      if (!creditResult) {
+        return NextResponse.json(
+          { error: "Credits insuffisants", code: "INSUFFICIENT_CREDITS" },
+          { status: 402 }
+        );
       }
-
-      const balanceBefore = user.credits;
-      const balanceAfter = balanceBefore - totalCredits;
-
-      await tx.user.update({
-        where: { id: session.user.id },
-        data: { credits: balanceAfter },
-      });
-
-      await tx.creditTransaction.create({
-        data: {
-          userId: session.user.id,
-          type: "DEDUCTION",
-          amount: totalCredits,
-          balanceBefore,
-          balanceAfter,
-          reason: `Import ${planLabel} de ${nbPhotos} photo${nbPhotos > 1 ? "s" : ""} (${creditsPerPhoto} cr/photo) - ${event.name}`,
-          eventId,
-        },
-      });
-
-      return { balanceAfter };
-    }).catch((err) => {
-      if (err.message === "INSUFFICIENT_CREDITS") return null;
-      throw err;
-    });
-
-    if (!creditResult) {
-      return NextResponse.json(
-        { error: "Credits insuffisants", code: "INSUFFICIENT_CREDITS" },
-        { status: 402 }
-      );
+      creditsRemaining = creditResult.balanceAfter;
     }
 
     // Save all files and create photo records
@@ -316,7 +321,7 @@ export async function POST(request: NextRequest) {
           webPath,
           s3Key,
           eventId,
-          creditDeducted: true,
+          creditDeducted: totalCredits > 0,
         },
       });
 
@@ -361,7 +366,7 @@ export async function POST(request: NextRequest) {
       sessionId,
       totalPhotos: nbPhotos,
       creditsDeducted: totalCredits,
-      creditsRemaining: creditResult.balanceAfter,
+      creditsRemaining,
     });
   } catch (error) {
     console.error("Batch upload error:", error);

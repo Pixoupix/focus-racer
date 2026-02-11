@@ -233,7 +233,7 @@ export default function UploadPage({
 
   // Phase: Confirm
   if (phase === "confirm") {
-    const creditsPerPhoto = ocrProvider === "aws" ? 3 : 1;
+    const creditsPerPhoto = ocrProvider === "aws" ? 3 : 0;
     const totalCreditsNeeded = selectedFiles.length * creditsPerPhoto;
     const hasEnoughCredits = credits >= totalCreditsNeeded;
 
@@ -293,7 +293,7 @@ export default function UploadPage({
                   )}
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-lg font-bold text-gray-900">Gratuit</span>
-                    <Badge className="bg-gray-100 text-gray-600 border-0 text-[10px]">1 credit/photo</Badge>
+                    <Badge className="bg-gray-100 text-gray-600 border-0 text-[10px]">0 credit</Badge>
                   </div>
                   <p className="text-xs text-gray-500 leading-relaxed mb-3">
                     Detection basique des dossards. Photos compressees pour un traitement leger.

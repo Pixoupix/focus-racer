@@ -238,8 +238,6 @@ export default function UploadPage({
     const hasEnoughCredits = credits >= totalCreditsNeeded;
 
     // Time estimation
-    const avgSecondsPerPhoto = ocrProvider === "aws" ? 0.3 : 3.5;
-    const totalSeconds = Math.round(selectedFiles.length * avgSecondsPerPhoto);
     const formatTime = (s: number) => {
       if (s < 60) return `~${s} sec`;
       const min = Math.floor(s / 60);

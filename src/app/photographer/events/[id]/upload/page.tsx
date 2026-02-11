@@ -233,7 +233,24 @@ export default function UploadPage({
 
   // Phase: Confirm
   if (phase === "confirm") {
-    const hasEnoughCredits = credits >= selectedFiles.length;
+    const creditsPerPhoto = ocrProvider === "aws" ? 3 : 1;
+    const totalCreditsNeeded = selectedFiles.length * creditsPerPhoto;
+    const hasEnoughCredits = credits >= totalCreditsNeeded;
+
+    // Time estimation
+    const avgSecondsPerPhoto = ocrProvider === "aws" ? 0.3 : 3.5;
+    const totalSeconds = Math.round(selectedFiles.length * avgSecondsPerPhoto);
+    const formatTime = (s: number) => {
+      if (s < 60) return `~${s} sec`;
+      const min = Math.floor(s / 60);
+      const sec = s % 60;
+      if (min < 60) return sec > 0 ? `~${min} min ${sec} sec` : `~${min} min`;
+      const h = Math.floor(min / 60);
+      const rm = min % 60;
+      return `~${h}h${rm > 0 ? ` ${rm} min` : ""}`;
+    };
+    const estimatedTime = formatTime(totalSeconds);
+    const successRate = ocrProvider === "aws" ? "95-99%" : "70-85%";
 
     return (
       <div className="p-8 max-w-2xl mx-auto animate-fade-in">
@@ -257,14 +274,92 @@ export default function UploadPage({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* OCR Provider choice */}
+            <div>
+              <p className="text-sm font-medium text-gray-900 mb-3">Methode de detection des dossards</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Free */}
+                <button
+                  type="button"
+                  onClick={() => setOcrProvider("tesseract")}
+                  className={`relative p-4 rounded-xl border-2 text-left transition-all ${
+                    ocrProvider === "tesseract"
+                      ? "border-emerald-500 bg-emerald-50/50 shadow-sm"
+                      : "border-gray-200 hover:border-gray-300 bg-white"
+                  }`}
+                >
+                  {ocrProvider === "tesseract" && (
+                    <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg font-bold text-gray-900">Gratuit</span>
+                    <Badge className="bg-gray-100 text-gray-600 border-0 text-[10px]">1 credit/photo</Badge>
+                  </div>
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    {formatTime(Math.round(selectedFiles.length * 3.5))} pour {selectedFiles.length} photo{selectedFiles.length > 1 ? "s" : ""}. Taux de reussite : ~70-85%.
+                  </p>
+                  <div className="flex items-center gap-3 mt-3 text-[11px]">
+                    <span className="flex items-center gap-1 text-gray-400">
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      {formatTime(Math.round(selectedFiles.length * 3.5))}
+                    </span>
+                    <span className="flex items-center gap-1 text-gray-400">
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      ~70-85%
+                    </span>
+                  </div>
+                </button>
+
+                {/* Premium */}
+                <button
+                  type="button"
+                  onClick={() => setOcrProvider("aws")}
+                  className={`relative p-4 rounded-xl border-2 text-left transition-all ${
+                    ocrProvider === "aws"
+                      ? "border-emerald-500 bg-emerald-50/50 shadow-sm"
+                      : "border-gray-200 hover:border-gray-300 bg-white"
+                  }`}
+                >
+                  {ocrProvider === "aws" && (
+                    <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg font-bold text-gray-900">Premium</span>
+                    <Badge className="bg-amber-100 text-amber-700 border-0 text-[10px]">3 credits/photo</Badge>
+                  </div>
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    {formatTime(Math.round(selectedFiles.length * 0.3))} pour {selectedFiles.length} photo{selectedFiles.length > 1 ? "s" : ""}. Taux de reussite : ~95-99%.
+                  </p>
+                  <div className="flex items-center gap-3 mt-3 text-[11px]">
+                    <span className="flex items-center gap-1 text-gray-400">
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
+                      {formatTime(Math.round(selectedFiles.length * 0.3))}
+                    </span>
+                    <span className="flex items-center gap-1 text-gray-400">
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      ~95-99%
+                    </span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
             {/* Summary */}
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 rounded-xl bg-gray-50 text-center">
                 <p className="text-3xl font-bold text-gray-900">{selectedFiles.length}</p>
-                <p className="text-sm text-gray-500 mt-1">photos</p>
+                <p className="text-sm text-gray-500 mt-1">photo{selectedFiles.length > 1 ? "s" : ""}</p>
               </div>
               <div className="p-4 rounded-xl bg-gray-50 text-center">
-                <p className="text-3xl font-bold text-emerald-500">{selectedFiles.length}</p>
+                <p className="text-3xl font-bold text-emerald-500">{totalCreditsNeeded}</p>
                 <p className="text-sm text-gray-500 mt-1">credits necessaires</p>
               </div>
             </div>
@@ -286,84 +381,6 @@ export default function UploadPage({
               </div>
             </div>
 
-            {/* OCR Provider choice */}
-            <div>
-              <p className="text-sm font-medium text-gray-900 mb-3">Methode de detection des dossards</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Tesseract - Free */}
-                <button
-                  type="button"
-                  onClick={() => setOcrProvider("tesseract")}
-                  className={`relative p-4 rounded-xl border-2 text-left transition-all ${
-                    ocrProvider === "tesseract"
-                      ? "border-emerald-500 bg-emerald-50/50 shadow-sm"
-                      : "border-gray-200 hover:border-gray-300 bg-white"
-                  }`}
-                >
-                  {ocrProvider === "tesseract" && (
-                    <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
-                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                      </svg>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-lg font-bold text-gray-900">Gratuit</span>
-                    <Badge className="bg-emerald-100 text-emerald-700 border-0 text-[10px]">Tesseract</Badge>
-                  </div>
-                  <p className="text-xs text-gray-500 leading-relaxed">
-                    Detection locale via Tesseract.js. Plus lent (~2-5s/photo) et taux de reussite correct (~70-85%).
-                  </p>
-                  <div className="flex items-center gap-3 mt-3 text-[11px]">
-                    <span className="flex items-center gap-1 text-gray-400">
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                      ~2-5s/photo
-                    </span>
-                    <span className="flex items-center gap-1 text-gray-400">
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
-                      ~70-85%
-                    </span>
-                  </div>
-                </button>
-
-                {/* AWS - Paid */}
-                <button
-                  type="button"
-                  onClick={() => setOcrProvider("aws")}
-                  className={`relative p-4 rounded-xl border-2 text-left transition-all ${
-                    ocrProvider === "aws"
-                      ? "border-emerald-500 bg-emerald-50/50 shadow-sm"
-                      : "border-gray-200 hover:border-gray-300 bg-white"
-                  }`}
-                >
-                  {ocrProvider === "aws" && (
-                    <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
-                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                      </svg>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-lg font-bold text-gray-900">Premium</span>
-                    <Badge className="bg-amber-100 text-amber-700 border-0 text-[10px]">AWS Rekognition</Badge>
-                  </div>
-                  <p className="text-xs text-gray-500 leading-relaxed">
-                    IA cloud Amazon. Ultra-rapide (~0.3s/photo) et quasi parfait (~95-99% de reussite).
-                  </p>
-                  <div className="flex items-center gap-3 mt-3 text-[11px]">
-                    <span className="flex items-center gap-1 text-gray-400">
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
-                      ~0.3s/photo
-                    </span>
-                    <span className="flex items-center gap-1 text-gray-400">
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
-                      ~95-99%
-                    </span>
-                  </div>
-                </button>
-              </div>
-            </div>
-
             {/* Info */}
             <div className="p-4 rounded-xl bg-teal-50 border border-teal-100 text-sm text-teal-700">
               Les credits des photos orphelines (sans dossard detecte) vous seront automatiquement restitues.
@@ -373,7 +390,7 @@ export default function UploadPage({
             {!hasEnoughCredits && (
               <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-sm text-red-700">
                 <p className="font-medium mb-1">Credits insuffisants</p>
-                <p>Il vous manque {selectedFiles.length - credits} credits.</p>
+                <p>Il vous manque {totalCreditsNeeded - credits} credits.</p>
                 <Link
                   href="/photographer/credits"
                   className="inline-block mt-2 text-red-800 underline font-medium"
@@ -406,7 +423,7 @@ export default function UploadPage({
                     Upload en cours...
                   </span>
                 ) : (
-                  `Valider l'import (${selectedFiles.length} credits)`
+                  `Valider l'import (${totalCreditsNeeded} credits)`
                 )}
               </Button>
             </div>

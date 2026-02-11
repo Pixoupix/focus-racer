@@ -23,7 +23,8 @@ async function processPhotoWithProgress(
   sessionId: string,
   photoIndex: number,
   totalPhotos: number,
-  ocrProvider?: "aws" | "tesseract"
+  ocrProvider?: "aws" | "tesseract",
+  creditsPerPhoto: number = 1
 ) {
   try {
     const webFullPath = await getUploadedFilePath(webFilePath);
@@ -120,7 +121,7 @@ async function processPhotoWithProgress(
             if (!user) return;
 
             const balanceBefore = user.credits;
-            const balanceAfter = balanceBefore + 1;
+            const balanceAfter = balanceBefore + creditsPerPhoto;
 
             await tx.user.update({
               where: { id: event.userId },
@@ -131,10 +132,10 @@ async function processPhotoWithProgress(
               data: {
                 userId: event.userId,
                 type: "REFUND",
-                amount: 1,
+                amount: creditsPerPhoto,
                 balanceBefore,
                 balanceAfter,
-                reason: "Aucun dossard detecte",
+                reason: `Aucun dossard detecte (${creditsPerPhoto} credit${creditsPerPhoto > 1 ? "s" : ""})`,
                 photoId,
                 eventId,
               },
@@ -249,6 +250,9 @@ export async function POST(request: NextRequest) {
 
     // Check and deduct credits atomically
     const nbPhotos = files.length;
+    const creditsPerPhoto = ocrProvider === "aws" ? 3 : 1;
+    const totalCredits = nbPhotos * creditsPerPhoto;
+    const planLabel = ocrProvider === "aws" ? "Premium" : "Gratuit";
     const creditResult = await prisma.$transaction(async (tx) => {
       const user = await tx.user.findUnique({
         where: { id: session.user.id },
@@ -256,12 +260,12 @@ export async function POST(request: NextRequest) {
       });
 
       if (!user) throw new Error("User not found");
-      if (user.credits < nbPhotos) {
+      if (user.credits < totalCredits) {
         throw new Error("INSUFFICIENT_CREDITS");
       }
 
       const balanceBefore = user.credits;
-      const balanceAfter = balanceBefore - nbPhotos;
+      const balanceAfter = balanceBefore - totalCredits;
 
       await tx.user.update({
         where: { id: session.user.id },
@@ -272,10 +276,10 @@ export async function POST(request: NextRequest) {
         data: {
           userId: session.user.id,
           type: "DEDUCTION",
-          amount: nbPhotos,
+          amount: totalCredits,
           balanceBefore,
           balanceAfter,
-          reason: `Import de ${nbPhotos} photo${nbPhotos > 1 ? "s" : ""} - ${event.name}`,
+          reason: `Import ${planLabel} de ${nbPhotos} photo${nbPhotos > 1 ? "s" : ""} (${creditsPerPhoto} cr/photo) - ${event.name}`,
           eventId,
         },
       });
@@ -329,7 +333,8 @@ export async function POST(request: NextRequest) {
           sessionId,
           photo.index,
           nbPhotos,
-          ocrProvider
+          ocrProvider,
+          creditsPerPhoto
         );
 
         processedCount++;
@@ -350,7 +355,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       sessionId,
       totalPhotos: nbPhotos,
-      creditsDeducted: nbPhotos,
+      creditsDeducted: totalCredits,
       creditsRemaining: creditResult.balanceAfter,
     });
   } catch (error) {

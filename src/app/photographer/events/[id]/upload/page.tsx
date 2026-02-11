@@ -421,7 +421,7 @@ export default function UploadPage({
                 <span className="text-gray-700">Votre solde</span>
                 <div className="flex items-center gap-2">
                   <span className="text-xl font-bold text-gray-900">
-                    {crédits.toLocaleString("fr-FR")} credits
+                    {credits.toLocaleString("fr-FR")} crédits
                   </span>
                   {isTestMode && (
                     <Badge className="bg-emerald-100 text-emerald-700 border-0 text-xs">

@@ -578,6 +578,58 @@ Focus Racer/
 - `Dockerfile` (prisma CLI dans runner)
 - `render.yaml` (ajout variables AI)
 
+### Session 6 — 2026-02-12 (Retraitement photos + Fix watermark)
+
+**Problème initial** : Utilisateur a uploadé 3 photos, elles sont traitées mais aucun dossard n'est détecté. Les photos uploadées avant la mise en place du pipeline optimisé n'avaient pas de versions web/thumbnails, donc l'OCR ne pouvait pas s'exécuter.
+
+**Diagnostic** :
+- Les dossiers `web/` et `thumbnails/` n'existaient pas dans `public/uploads/{eventId}/`
+- Le pipeline IA nécessite la version web optimisée pour tourner
+- Sans version web → pas d'OCR → pas de dossards détectés
+
+**Solution : Script de retraitement** :
+- Créé un script de retraitement qui régénère les versions manquantes
+- API route `/api/admin/reprocess-photos` (POST) pour déclencher le retraitement depuis l'interface
+- Bouton "Retraiter les photos" ajouté dans la page Admin → IA & Traitement
+- Script local `scripts/reprocess-photos.ts` + commande npm `npm run reprocess`
+
+**Correctifs de build** :
+1. **Erreur TypeScript** : type `any` non autorisé → Créé interface `ReprocessResult`
+2. **Erreur ESLint** : paramètre `req` inutilisé → Supprimé
+3. **Erreur watermark** : SVG créé avec dimensions originales puis appliqué sur image resizée → Utilisation de la vraie fonction `generateWatermarkedThumbnail` de `watermark.ts` au lieu de la réécrire
+
+**Problème de stockage éphémère découvert** :
+- Sur Render free tier, `public/uploads/` est **éphémère** : les fichiers disparaissent à chaque redéploiement
+- Photos uploadées avant les déploiements du jour ont disparu
+- Solution temporaire : réupload des photos via l'interface
+- Solution production : configurer AWS S3 pour stockage persistant (obligatoire)
+
+**État final** :
+- ✅ Retraitement fonctionnel : régénère web + thumbnails + relance OCR
+- ✅ Photos retraitées avec succès après réupload
+- ✅ Dossards détectés correctement avec Tesseract OCR
+- ⚠️ Stockage éphémère sur Render = photos perdues à chaque deploy sans S3
+
+**Commits** :
+- `990002b` : Add photo reprocessing feature for web/thumbnail regeneration + OCR
+- `dff0874` : Fix TypeScript/ESLint errors: type ReprocessResult, remove unused req param
+- `07782a0` : Fix watermark SVG dimensions: create SVG after resize, not before
+- `8272e92` : Use real watermark function instead of local broken one
+
+**Fichiers créés** :
+- `src/app/api/admin/reprocess-photos/route.ts` (API retraitement)
+- `scripts/reprocess-photos.ts` (script CLI local)
+
+**Fichiers modifiés** :
+- `package.json` (ajout script `reprocess`)
+- `src/app/admin/ai/page.tsx` (bouton "Retraiter les photos" + interface ReprocessResult)
+
+**TODO pour production** :
+- [ ] Configurer AWS S3 pour stockage persistant (bucket, IAM user, env vars sur Render)
+- [ ] Ou migrer vers Oracle Cloud quand capacité ARM disponible (stockage local persistant)
+- [ ] Décider si le bouton de retraitement doit être accessible dans l'espace photographe (actuellement admin uniquement)
+- [ ] Implémenter système de crédits complet (mentionné dans mémoire mais code non trouvé)
+
 ---
 
 ## 10. Notes techniques
@@ -592,7 +644,8 @@ Focus Racer/
 - **RGPD** : Formulaire public, suppression en cascade, audit trail complet
 - **Marketplace** : Listings, candidatures, reviews avec ratings
 - **Connecteurs** : Architecture modulaire (Njuko, KMS, CSV). Interface `Connector` pour ajout facile.
-- **Stockage** : Local + S3/CloudFront optionnel, URLs signées 24h. Images servies via `/api/uploads/[...path]` (rewrite transparent)
+- **Stockage** : Local + S3/CloudFront optionnel, URLs signées 24h. Images servies via `/api/uploads/[...path]` (rewrite transparent). ⚠️ **Render** : stockage éphémère, fichiers perdus à chaque deploy → S3 obligatoire pour production
+- **Retraitement** : API `/api/admin/reprocess-photos` + bouton dans Admin IA. Régénère web/thumbnails + relance OCR sur photos existantes
 - **Déploiement** : Render.com (Node.js natif, PostgreSQL managé). Docker prêt pour Oracle Cloud (futur). GitHub Actions keep-alive /14min.
 - **Upload UX** : Compression Canvas client-side (4000px, q90) → XHR progress → SSE processing. Mini-jeu "Bib Runner" pendant traitement.
 - **Robustesse** : Timeout 30s Tesseract, finally block sur processedCount, rewrite /uploads pour production

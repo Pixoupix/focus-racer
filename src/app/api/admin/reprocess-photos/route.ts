@@ -46,12 +46,17 @@ async function generateWatermarkedThumbnail(
   const thumbFilename = `thumb_${path.parse(filename).name}.jpg`;
   const thumbPath = path.join(thumbDir, thumbFilename);
 
-  const image = sharp(originalPath);
-  const metadata = await image.metadata();
+  // First, resize the image to get final dimensions
+  const resizedImage = sharp(originalPath).resize(800, 600, {
+    fit: "inside",
+    withoutEnlargement: true,
+  });
 
+  const metadata = await resizedImage.metadata();
   const width = metadata.width || 800;
   const height = metadata.height || 600;
 
+  // Create watermark SVG with the RESIZED dimensions
   const watermarkSvg = Buffer.from(`
     <svg width="${width}" height="${height}">
       <style>
@@ -69,8 +74,8 @@ async function generateWatermarkedThumbnail(
     </svg>
   `);
 
-  await image
-    .resize(800, 600, { fit: "inside", withoutEnlargement: true })
+  // Apply watermark to the resized image
+  await resizedImage
     .composite([{ input: watermarkSvg, gravity: "center" }])
     .jpeg({ quality: 80 })
     .toFile(thumbPath);

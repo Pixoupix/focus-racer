@@ -78,7 +78,7 @@ async function generateWatermarkedThumbnail(
   return `/uploads/${eventId}/thumbnails/${thumbFilename}`;
 }
 
-export async function POST(req: Request) {
+export async function POST() {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user || session.user.role !== "ADMIN") {

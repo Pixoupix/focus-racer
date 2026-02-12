@@ -29,6 +29,13 @@ interface AIStatus {
   };
 }
 
+interface ReprocessResult {
+  total: number;
+  processed: number;
+  failed: number;
+  errors?: string[];
+}
+
 function StatusBadge({ enabled }: { enabled: boolean }) {
   return (
     <Badge className={enabled ? "bg-emerald-100 text-emerald-700" : "bg-white/50 text-muted-foreground"}>
@@ -44,7 +51,7 @@ export default function AdminAIPage() {
   const [reprocessResult, setReprocessResult] = useState<{
     success: boolean;
     message: string;
-    details?: any;
+    details?: ReprocessResult;
   } | null>(null);
 
   useEffect(() => {

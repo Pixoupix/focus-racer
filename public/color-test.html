@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Focus Racer - Test palette avec Emeraude</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: #F8FAFC; color: #0F172A; }
+
+.header {
+  background: linear-gradient(135deg, #10B981 0%, #064E3B 100%);
+  padding: 40px 20px;
+  text-align: center;
+  color: white;
+}
+.header h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+.header p { color: rgba(255,255,255,0.8); font-size: 14px; }
+.header .emerald-badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 14px; border-radius: 20px; font-size: 12px; margin-top: 10px; }
+
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; max-width: 1400px; margin: 40px auto; padding: 0 20px; }
+
+.proposal { background: white; border-radius: 16px; padding: 28px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+.proposal-title { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+.proposal-sub { font-size: 12px; color: #64748B; margin-bottom: 20px; }
+
+.section-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #94A3B8; margin-bottom: 10px; margin-top: 20px; }
+.btn { display: inline-block; padding: 10px 24px; border-radius: 10px; font-weight: 600; font-size: 14px; color: white; border: none; cursor: pointer; transition: all 0.2s; margin-right: 8px; margin-bottom: 8px; }
+.btn-outline { background: transparent; border: 2px solid; }
+.badge { display: inline-block; padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; margin-right: 6px; margin-bottom: 6px; }
+.credit-card { border-radius: 14px; padding: 20px; color: white; margin: 8px 0; }
+.credit-card .amount { font-size: 36px; font-weight: 800; }
+.credit-card .label { font-size: 12px; opacity: 0.85; }
+
+.hero-section { border-radius: 14px; padding: 30px 20px; text-align: center; color: white; margin-bottom: 12px; }
+.hero-section h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.hero-section .accent { font-weight: 800; }
+.hero-section p { font-size: 13px; opacity: 0.85; margin-bottom: 14px; }
+.hero-section .hero-btn { display: inline-block; padding: 10px 24px; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; border: none; }
+
+.navbar { display: flex; align-items: center; gap: 16px; padding: 10px 16px; border-radius: 10px; margin-bottom: 12px; color: white; font-size: 13px; font-weight: 500; }
+.navbar .logo { font-weight: 800; font-size: 15px; }
+.navbar .nav-btn { padding: 6px 16px; border-radius: 8px; font-weight: 600; font-size: 12px; border: none; cursor: pointer; }
+
+.ocr-card { border: 2px solid #E2E8F0; border-radius: 12px; padding: 16px; margin: 8px 0; }
+.ocr-card h4 { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+.ocr-option { border: 2px solid #E2E8F0; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
+.ocr-option.selected { border-width: 2px; }
+.ocr-check { width: 22px; height: 22px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+
+.stat-number { font-size: 32px; font-weight: 800; }
+.stat-label { font-size: 12px; color: #64748B; }
+.stat-bar { height: 6px; border-radius: 3px; background: #E2E8F0; margin-top: 6px; overflow: hidden; }
+.stat-fill { height: 100%; border-radius: 3px; width: 65%; }
+
+.sidebar { border-radius: 12px; padding: 8px; margin: 8px 0; }
+.sidebar-item { padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.7); margin-bottom: 2px; }
+.sidebar-item.active { font-weight: 600; }
+
+.link { font-size: 13px; font-weight: 600; text-decoration: none; }
+.input-demo { width: 100%; padding: 10px 14px; border-radius: 10px; border: 2px solid #E2E8F0; font-size: 13px; font-family: 'Inter', sans-serif; margin-top: 6px; outline: none; }
+
+.color-duo { display: flex; gap: 6px; margin-bottom: 12px; align-items: center; }
+.color-swatch { width: 36px; height: 36px; border-radius: 8px; }
+.color-info { font-size: 11px; color: #64748B; }
+.color-info strong { color: #0F172A; font-size: 13px; display: block; }
+
+/* Proposal-specific: Slate + Emerald */
+.p1 .hero-section { background: linear-gradient(135deg, #334155 0%, #1E293B 100%); }
+.p1 .hero-section .accent { color: #10B981; }
+.p1 .hero-section .hero-btn { background: #10B981; color: white; }
+.p1 .hero-section .hero-btn-outline { background: transparent; border: 2px solid rgba(255,255,255,0.4); color: white; padding: 8px 20px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; margin-left: 8px; }
+.p1 .navbar { background: #1E293B; }
+.p1 .navbar .nav-btn { background: #10B981; color: white; }
+.p1 .btn-primary { background: #10B981; }
+.p1 .btn-secondary { color: #334155; border-color: #33415540; }
+.p1 .badge-accent { background: #10B98120; color: #059669; }
+.p1 .badge-primary { background: #33415520; color: #334155; }
+.p1 .badge-neutral { background: #F1F5F9; color: #64748B; }
+.p1 .credit-card { background: linear-gradient(135deg, #10B981, #059669); }
+.p1 .ocr-option.selected { border-color: #10B981; background: #10B98108; }
+.p1 .ocr-check { background: #10B981; }
+.p1 .stat-number { color: #334155; }
+.p1 .stat-fill { background: linear-gradient(90deg, #10B981, #334155); }
+.p1 .sidebar { background: #1E293B; }
+.p1 .sidebar-item.active { background: #10B981; color: white; }
+.p1 .link { color: #10B981; }
+.p1 .input-demo:focus { border-color: #10B981; box-shadow: 0 0 0 3px #10B98120; }
+
+/* Proposal-specific: Teal profond + Emerald */
+.p2 .hero-section { background: linear-gradient(135deg, #0F766E 0%, #134E4A 100%); }
+.p2 .hero-section .accent { color: #6EE7B7; }
+.p2 .hero-section .hero-btn { background: #10B981; color: white; }
+.p2 .hero-section .hero-btn-outline { background: transparent; border: 2px solid rgba(255,255,255,0.4); color: white; padding: 8px 20px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; margin-left: 8px; }
+.p2 .navbar { background: #134E4A; }
+.p2 .navbar .nav-btn { background: #10B981; color: white; }
+.p2 .btn-primary { background: #10B981; }
+.p2 .btn-secondary { color: #0F766E; border-color: #0F766E40; }
+.p2 .badge-accent { background: #10B98120; color: #059669; }
+.p2 .badge-primary { background: #0F766E20; color: #0F766E; }
+.p2 .badge-neutral { background: #F1F5F9; color: #64748B; }
+.p2 .credit-card { background: linear-gradient(135deg, #10B981, #0F766E); }
+.p2 .ocr-option.selected { border-color: #10B981; background: #10B98108; }
+.p2 .ocr-check { background: #10B981; }
+.p2 .stat-number { color: #0F766E; }
+.p2 .stat-fill { background: linear-gradient(90deg, #10B981, #0F766E); }
+.p2 .sidebar { background: #134E4A; }
+.p2 .sidebar-item.active { background: #10B981; color: white; }
+.p2 .link { color: #0F766E; }
+.p2 .input-demo:focus { border-color: #10B981; box-shadow: 0 0 0 3px #10B98120; }
+
+/* Proposal-specific: Indigo profond + Emerald */
+.p3 .hero-section { background: linear-gradient(135deg, #4338CA 0%, #1E1B4B 100%); }
+.p3 .hero-section .accent { color: #34D399; }
+.p3 .hero-section .hero-btn { background: #10B981; color: white; }
+.p3 .hero-section .hero-btn-outline { background: transparent; border: 2px solid rgba(255,255,255,0.4); color: white; padding: 8px 20px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; margin-left: 8px; }
+.p3 .navbar { background: #1E1B4B; }
+.p3 .navbar .nav-btn { background: #10B981; color: white; }
+.p3 .btn-primary { background: #10B981; }
+.p3 .btn-secondary { color: #4338CA; border-color: #4338CA40; }
+.p3 .badge-accent { background: #10B98120; color: #059669; }
+.p3 .badge-primary { background: #4338CA20; color: #4338CA; }
+.p3 .badge-neutral { background: #F1F5F9; color: #64748B; }
+.p3 .credit-card { background: linear-gradient(135deg, #10B981, #4338CA); }
+.p3 .ocr-option.selected { border-color: #10B981; background: #10B98108; }
+.p3 .ocr-check { background: #10B981; }
+.p3 .stat-number { color: #4338CA; }
+.p3 .stat-fill { background: linear-gradient(90deg, #10B981, #4338CA); }
+.p3 .sidebar { background: #1E1B4B; }
+.p3 .sidebar-item.active { background: #10B981; color: white; }
+.p3 .link { color: #4338CA; }
+.p3 .input-demo:focus { border-color: #10B981; box-shadow: 0 0 0 3px #10B98120; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Focus Racer - Quelle base pour l'Emeraude ?</h1>
+  <p>Accent : Emeraude #10B981 (fixe) — 3 propositions pour remplacer le Bleu #2D5BFF</p>
+  <div class="emerald-badge">Emeraude #10B981 = couleur d'action</div>
+</div>
+
+<div class="grid">
+
+<!-- ===== PROPOSITION 1: Slate / Anthracite ===== -->
+<div class="proposal p1">
+  <div class="color-duo">
+    <div class="color-swatch" style="background:#334155"></div>
+    <div class="color-swatch" style="background:#10B981"></div>
+    <div class="color-info"><strong>1. Slate / Anthracite</strong>#334155 + #10B981</div>
+  </div>
+  <div class="proposal-sub">Sobre, moderne, professionnel. L'emeraude brille seule comme accent.</div>
+
+  <div class="hero-section">
+    <h3>Vos photos, <span class="accent">en un clic</span></h3>
+    <p>Retrouvez vos photos de course instantanement</p>
+    <button class="hero-btn">Trouver mes photos</button>
+    <button class="hero-btn-outline">Espace photographe</button>
+  </div>
+
+  <div class="navbar">
+    <span class="logo">Focus Racer</span>
+    <span>Courses</span>
+    <span>Marketplace</span>
+    <button class="nav-btn">Inscription</button>
+  </div>
+
+  <div class="section-label">Boutons</div>
+  <button class="btn btn-primary">Ajouter des photos</button>
+  <button class="btn btn-outline btn-secondary">Start-List</button>
+
+  <div class="section-label">Badges</div>
+  <span class="badge badge-accent">12 photos</span>
+  <span class="badge badge-primary">3 dossards</span>
+  <span class="badge badge-neutral">Publie</span>
+
+  <div class="section-label">Carte solde</div>
+  <div class="credit-card">
+    <div class="label">Solde disponible</div>
+    <div class="amount">999 999</div>
+    <div class="label">credits</div>
+  </div>
+
+  <div class="section-label">Choix OCR (upload)</div>
+  <div class="ocr-card">
+    <h4>Methode de detection</h4>
+    <div class="ocr-option selected">
+      <div><strong>Gratuit</strong><br><span style="color:#64748B;font-size:11px">Tesseract - ~2-5s/photo, ~70-85%</span></div>
+      <div class="ocr-check">&#10003;</div>
+    </div>
+    <div class="ocr-option">
+      <div><strong>Premium</strong><br><span style="color:#64748B;font-size:11px">AWS Rekognition - ~0.3s/photo, ~95-99%</span></div>
+    </div>
+  </div>
+
+  <div class="section-label">Stats</div>
+  <div class="stat-number">847</div>
+  <div class="stat-label">Photos traitees</div>
+  <div class="stat-bar"><div class="stat-fill"></div></div>
+
+  <div class="section-label">Sidebar (extrait)</div>
+  <div class="sidebar">
+    <div class="sidebar-item">Dashboard</div>
+    <div class="sidebar-item active">Evenements</div>
+    <div class="sidebar-item">Credits</div>
+  </div>
+
+  <div class="section-label">Lien &amp; Input focus</div>
+  <a href="#" class="link">&larr; Retour a l'evenement</a>
+  <input class="input-demo" value="photographe@test.com" />
+</div>
+
+<!-- ===== PROPOSITION 2: Teal profond (monochrome) ===== -->
+<div class="proposal p2">
+  <div class="color-duo">
+    <div class="color-swatch" style="background:#0F766E"></div>
+    <div class="color-swatch" style="background:#10B981"></div>
+    <div class="color-info"><strong>2. Teal profond</strong>#0F766E + #10B981</div>
+  </div>
+  <div class="proposal-sub">Monochrome vert. Cohesion nature/outdoor, elegant et reposant.</div>
+
+  <div class="hero-section">
+    <h3>Vos photos, <span class="accent">en un clic</span></h3>
+    <p>Retrouvez vos photos de course instantanement</p>
+    <button class="hero-btn">Trouver mes photos</button>
+    <button class="hero-btn-outline">Espace photographe</button>
+  </div>
+
+  <div class="navbar">
+    <span class="logo">Focus Racer</span>
+    <span>Courses</span>
+    <span>Marketplace</span>
+    <button class="nav-btn">Inscription</button>
+  </div>
+
+  <div class="section-label">Boutons</div>
+  <button class="btn btn-primary">Ajouter des photos</button>
+  <button class="btn btn-outline btn-secondary">Start-List</button>
+
+  <div class="section-label">Badges</div>
+  <span class="badge badge-accent">12 photos</span>
+  <span class="badge badge-primary">3 dossards</span>
+  <span class="badge badge-neutral">Publie</span>
+
+  <div class="section-label">Carte solde</div>
+  <div class="credit-card">
+    <div class="label">Solde disponible</div>
+    <div class="amount">999 999</div>
+    <div class="label">credits</div>
+  </div>
+
+  <div class="section-label">Choix OCR (upload)</div>
+  <div class="ocr-card">
+    <h4>Methode de detection</h4>
+    <div class="ocr-option selected">
+      <div><strong>Gratuit</strong><br><span style="color:#64748B;font-size:11px">Tesseract - ~2-5s/photo, ~70-85%</span></div>
+      <div class="ocr-check">&#10003;</div>
+    </div>
+    <div class="ocr-option">
+      <div><strong>Premium</strong><br><span style="color:#64748B;font-size:11px">AWS Rekognition - ~0.3s/photo, ~95-99%</span></div>
+    </div>
+  </div>
+
+  <div class="section-label">Stats</div>
+  <div class="stat-number">847</div>
+  <div class="stat-label">Photos traitees</div>
+  <div class="stat-bar"><div class="stat-fill"></div></div>
+
+  <div class="section-label">Sidebar (extrait)</div>
+  <div class="sidebar">
+    <div class="sidebar-item">Dashboard</div>
+    <div class="sidebar-item active">Evenements</div>
+    <div class="sidebar-item">Credits</div>
+  </div>
+
+  <div class="section-label">Lien &amp; Input focus</div>
+  <a href="#" class="link">&larr; Retour a l'evenement</a>
+  <input class="input-demo" value="photographe@test.com" />
+</div>
+
+<!-- ===== PROPOSITION 3: Indigo profond ===== -->
+<div class="proposal p3">
+  <div class="color-duo">
+    <div class="color-swatch" style="background:#4338CA"></div>
+    <div class="color-swatch" style="background:#10B981"></div>
+    <div class="color-info"><strong>3. Indigo profond</strong>#4338CA + #10B981</div>
+  </div>
+  <div class="proposal-sub">Contraste complementaire. Premium, tech, energie. Duo classique vert/violet.</div>
+
+  <div class="hero-section">
+    <h3>Vos photos, <span class="accent">en un clic</span></h3>
+    <p>Retrouvez vos photos de course instantanement</p>
+    <button class="hero-btn">Trouver mes photos</button>
+    <button class="hero-btn-outline">Espace photographe</button>
+  </div>
+
+  <div class="navbar">
+    <span class="logo">Focus Racer</span>
+    <span>Courses</span>
+    <span>Marketplace</span>
+    <button class="nav-btn">Inscription</button>
+  </div>
+
+  <div class="section-label">Boutons</div>
+  <button class="btn btn-primary">Ajouter des photos</button>
+  <button class="btn btn-outline btn-secondary">Start-List</button>
+
+  <div class="section-label">Badges</div>
+  <span class="badge badge-accent">12 photos</span>
+  <span class="badge badge-primary">3 dossards</span>
+  <span class="badge badge-neutral">Publie</span>
+
+  <div class="section-label">Carte solde</div>
+  <div class="credit-card">
+    <div class="label">Solde disponible</div>
+    <div class="amount">999 999</div>
+    <div class="label">credits</div>
+  </div>
+
+  <div class="section-label">Choix OCR (upload)</div>
+  <div class="ocr-card">
+    <h4>Methode de detection</h4>
+    <div class="ocr-option selected">
+      <div><strong>Gratuit</strong><br><span style="color:#64748B;font-size:11px">Tesseract - ~2-5s/photo, ~70-85%</span></div>
+      <div class="ocr-check">&#10003;</div>
+    </div>
+    <div class="ocr-option">
+      <div><strong>Premium</strong><br><span style="color:#64748B;font-size:11px">AWS Rekognition - ~0.3s/photo, ~95-99%</span></div>
+    </div>
+  </div>
+
+  <div class="section-label">Stats</div>
+  <div class="stat-number">847</div>
+  <div class="stat-label">Photos traitees</div>
+  <div class="stat-bar"><div class="stat-fill"></div></div>
+
+  <div class="section-label">Sidebar (extrait)</div>
+  <div class="sidebar">
+    <div class="sidebar-item">Dashboard</div>
+    <div class="sidebar-item active">Evenements</div>
+    <div class="sidebar-item">Credits</div>
+  </div>
+
+  <div class="section-label">Lien &amp; Input focus</div>
+  <a href="#" class="link">&larr; Retour a l'evenement</a>
+  <input class="input-demo" value="photographe@test.com" />
+</div>
+
+</div>
+
+</body>
+</html>

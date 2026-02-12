@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { RefreshCw, CheckCircle2, XCircle } from "lucide-react";
 
 interface AIStatus {
   config: {
@@ -38,6 +40,12 @@ function StatusBadge({ enabled }: { enabled: boolean }) {
 export default function AdminAIPage() {
   const [status, setStatus] = useState<AIStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isReprocessing, setIsReprocessing] = useState(false);
+  const [reprocessResult, setReprocessResult] = useState<{
+    success: boolean;
+    message: string;
+    details?: any;
+  } | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/ai-status")
@@ -46,6 +54,45 @@ export default function AdminAIPage() {
       .catch(console.error)
       .finally(() => setIsLoading(false));
   }, []);
+
+  const handleReprocess = async () => {
+    if (!confirm("Retraiter toutes les photos sans version web/thumbnail ? Cette opération peut prendre plusieurs minutes.")) {
+      return;
+    }
+
+    setIsReprocessing(true);
+    setReprocessResult(null);
+
+    try {
+      const res = await fetch("/api/admin/reprocess-photos", { method: "POST" });
+      const data = await res.json();
+
+      if (data.success) {
+        setReprocessResult({
+          success: true,
+          message: `✅ ${data.processed}/${data.total} photos retraitées avec succès`,
+          details: data,
+        });
+        // Reload stats
+        const statusRes = await fetch("/api/admin/ai-status");
+        const newStatus = await statusRes.json();
+        setStatus(newStatus);
+      } else {
+        setReprocessResult({
+          success: false,
+          message: `❌ Erreur: ${data.error || "Échec du retraitement"}`,
+          details: data,
+        });
+      }
+    } catch (error) {
+      setReprocessResult({
+        success: false,
+        message: `❌ Erreur: ${error instanceof Error ? error.message : "Erreur inconnue"}`,
+      });
+    } finally {
+      setIsReprocessing(false);
+    }
+  };
 
   if (isLoading) return <p className="text-muted-foreground">Chargement...</p>;
   if (!status) return <p className="text-red-600">Erreur de chargement</p>;
@@ -57,8 +104,51 @@ export default function AdminAIPage() {
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-3xl font-bold text-navy mb-2">IA &amp; Traitement</h1>
-      <p className="text-muted-foreground mb-8">Configuration et statistiques du pipeline IA</p>
+      <div className="flex justify-between items-start mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-navy mb-2">IA &amp; Traitement</h1>
+          <p className="text-muted-foreground">Configuration et statistiques du pipeline IA</p>
+        </div>
+        <Button
+          onClick={handleReprocess}
+          disabled={isReprocessing}
+          className="bg-emerald hover:bg-emerald-dark"
+        >
+          <RefreshCw className={`mr-2 h-4 w-4 ${isReprocessing ? "animate-spin" : ""}`} />
+          {isReprocessing ? "Retraitement en cours..." : "Retraiter les photos"}
+        </Button>
+      </div>
+
+      {reprocessResult && (
+        <Card className={`mb-6 ${reprocessResult.success ? "border-emerald bg-emerald-50" : "border-red-500 bg-red-50"}`}>
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              {reprocessResult.success ? (
+                <CheckCircle2 className="h-5 w-5 text-emerald flex-shrink-0 mt-0.5" />
+              ) : (
+                <XCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+              )}
+              <div className="flex-1">
+                <p className={`font-medium ${reprocessResult.success ? "text-emerald" : "text-red-700"}`}>
+                  {reprocessResult.message}
+                </p>
+                {reprocessResult.details && reprocessResult.details.failed > 0 && (
+                  <details className="mt-2 text-sm text-muted-foreground">
+                    <summary className="cursor-pointer hover:text-gray-900">
+                      Voir les erreurs ({reprocessResult.details.failed})
+                    </summary>
+                    <ul className="mt-2 space-y-1 list-disc list-inside">
+                      {reprocessResult.details.errors?.slice(0, 10).map((err: string, i: number) => (
+                        <li key={i}>{err}</li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Feature status */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">

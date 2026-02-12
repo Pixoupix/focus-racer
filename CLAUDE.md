@@ -8,7 +8,7 @@
 ## 1. Présentation du projet
 
 **Nom** : Focus Racer
-**Version** : 0.9.0 (pré-production — toutes phases complètes, déploiement en cours)
+**Version** : 0.9.1 (déployé sur Render — https://focus-racer.onrender.com)
 **Type** : Plateforme SaaS B2B2C de tri automatique et vente de photos de courses sportives
 **Objectif** : Automatiser le tri des photos par IA (dossard/visage), permettre aux coureurs de retrouver et acheter leurs photos, et offrir aux pros un outil de gestion complet.
 
@@ -97,7 +97,8 @@
 - **Docker** multi-stage (Node 20 slim, standalone Next.js)
 - **Docker Compose** prod : PostgreSQL 16 + Next.js + Nginx reverse proxy
 - **Nginx** : gzip, rate limiting, cache statique, headers sécurité, prêt HTTPS/Let's Encrypt
-- **Cible** : Oracle Cloud Free Tier (4 ARM Ampere, 24 GB RAM, gratuit à vie)
+- **Hébergement** : Render.com (free tier Node.js + PostgreSQL managé)
+- **Cible future** : Oracle Cloud Free Tier (4 ARM, 24 GB RAM) quand capacité dispo
 
 ### Configuration clé
 - Body size limit Server Actions : **10 MB**
@@ -260,6 +261,18 @@ Focus Racer/
 - [x] Auto-clustering debounced (30s après dernier traitement)
 - [x] Photos HD servies uniquement à l'achat
 
+### UX Upload & Déploiement (Session 5)
+- [x] Phase "uploading" avec barre de progression réseau (XHR)
+- [x] Compression client-side Canvas (4000px max, JPEG q90) avant envoi
+- [x] Sous-étapes visibles : Compression (ambre) → Envoi (vert)
+- [x] Progression granulaire du traitement (sous-étapes par photo)
+- [x] Mini-jeu "Bib Runner" (Canvas infini, obstacles, collectibles, touch)
+- [x] Timeout 30s sur Tesseract OCR (anti-gel Render)
+- [x] processedCount++ dans finally (progression avance même sur erreur)
+- [x] API route `/api/uploads/[...path]` pour servir les images en production
+- [x] Rewrite Next.js `/uploads/*` → `/api/uploads/*`
+- [x] Déploiement Render.com + GitHub Actions keep-alive
+
 ---
 
 ## 7. ROADMAP DE DÉVELOPPEMENT — Plan de travail priorisé
@@ -344,27 +357,24 @@ Focus Racer/
 - [x] **7.10** Connecteurs API (Njuko, KMS, CSV générique)
 - [x] **7.11** RGPD complet (formulaire, suppression cascade, audit)
 
-### DÉPLOIEMENT — Infrastructure de production (en cours)
-> Ajouté Session 3, mis à jour Session 4
+### DÉPLOIEMENT — Render.com ✅
+> Ajouté Session 3, mis à jour Session 5
 
-- [x] Dockerfile multi-stage (ARM compatible)
+- [x] Dockerfile multi-stage (ARM compatible, pour Oracle/Docker futur)
 - [x] docker-compose.prod.yml (PostgreSQL + App + Nginx)
 - [x] nginx.conf (reverse proxy, rate limiting, cache, sécurité)
 - [x] .env.example (template complet)
 - [x] scripts/deploy.sh (déploiement one-command)
-- [x] next.config.mjs output: standalone
-- [x] Compte Oracle Cloud créé (région : France Central Paris)
-- [ ] Création instance ARM (bloqué : capacité ARM saturée sur Paris, impossible de changer de région — limite 1 région par tenancy Free Tier)
-- [ ] Ouvrir ports 80/443 (Security List)
-- [ ] Installation Docker + Docker Compose sur instance
-- [ ] Transfert code + .env
-- [ ] Déploiement effectif + DNS + HTTPS Let's Encrypt
+- [x] next.config.mjs output: standalone + rewrites /uploads → API
+- [x] render.yaml (Blueprint : PostgreSQL + Web Service Node.js)
+- [x] Déployé sur Render.com : https://focus-racer.onrender.com
+- [x] GitHub Actions keep-alive (cron /14min anti-cold-start)
+- [x] API route `/api/uploads/[...path]` pour servir les images uploadées
+- [ ] Configurer clés AWS (Rekognition) pour OCR premium
+- [ ] Configurer Stripe webhook sur Render
+- [ ] Configurer AWS S3 pour stockage permanent (uploads éphémères sur Render)
 
-**Note** : Options pour débloquer l'instance ARM :
-1. Retenter plus tard (la capacité se libère régulièrement, surtout nuit/matin)
-2. Créer un nouveau compte Oracle avec une autre carte sur Frankfurt
-3. Alternative : shape AMD VM.Standard.E2.1.Micro (1 OCPU, 1 GB — très limité)
-4. Alternative : Render.com ou Railway.app (free tier, moins puissant mais dispo immédiatement)
+**Note Oracle Cloud** : capacité ARM saturée sur Paris, abandonné temporairement. Render.com utilisé à la place (free tier, auto-deploy depuis GitHub).
 
 ---
 
@@ -522,6 +532,52 @@ Focus Racer/
   6. Déployer
   7. (Plus tard) Migrer sur Oracle quand capacité ARM dispo sur Paris
 
+### Session 5 — 2026-02-11 (UX Upload + Mini-jeu + Déploiement Render)
+
+**Mini-jeu "Bib Runner"** : Jeu infini Canvas HTML5 jouable pendant le traitement des photos. Coureur sur piste d'athlétisme, obstacles (caméras, trépieds, drones, photos floues), collectibles (dossards +1pt, médailles +5pts). Contrôles : Espace/Clic pour sauter, Flèche bas/Swipe pour se baisser. Vitesse croissante. S'arrête automatiquement quand le traitement est terminé.
+
+**Phase "uploading"** : Nouvelle étape visible entre la confirmation et le traitement. Compression client-side Canvas (4000px max, JPEG q90) → envoi XHR avec progression réseau réelle. Deux sous-étapes : "Compression" (barre ambre) puis "Envoi" (barre verte).
+
+**Progression granulaire** : Ajout de sous-étapes visibles dans le traitement (Compression → Analyse dossard → Retouche auto → Watermark → Reconnaissance faciale → Détection labels). Fonctionne en mode gratuit et premium.
+
+**Fix processing bloqué sur Render** :
+- Timeout 30s sur Tesseract OCR (empêche le gel sur Render free tier 512MB)
+- `processedCount++` dans un `finally` block (la progression avance même si le traitement crash)
+
+**Fix images cassées sur Render** :
+- Next.js avec `output: "standalone"` ne sert pas les fichiers uploadés dynamiquement dans `public/`
+- Solution : API route `/api/uploads/[...path]` qui lit les fichiers depuis `UPLOAD_DIR`
+- Rewrite transparent dans `next.config.mjs` : `/uploads/*` → `/api/uploads/*`
+- Zéro changement dans le reste du code (tous les paths existants fonctionnent)
+
+**Déploiement Render.com** :
+- Blueprint `render.yaml` : PostgreSQL free + Web Service Node.js
+- Build : `npm install --include=dev && npx prisma generate && npm run build`
+- Start : `npx prisma migrate deploy && npx next start -p $PORT`
+- Variables d'environnement configurées via le dashboard Render
+- GitHub Actions keep-alive : cron /14min pour empêcher le cold start (secret `RENDER_URL`)
+- URL : https://focus-racer.onrender.com
+
+**Fix build** :
+- `package.json` : suppression de `prisma db push` du script build (incompatible production)
+- `Dockerfile` : ajout de prisma CLI dans le runner stage (pour `migrate deploy`)
+- `next.config.mjs` : activation `output: "standalone"` + ajout rewrites
+
+**Fichiers créés** :
+- `src/components/game/bib-runner.tsx` (mini-jeu Canvas)
+- `src/app/api/uploads/[...path]/route.ts` (serveur de fichiers uploadés)
+- `.github/workflows/keep-alive.yml` (cron anti-cold-start)
+
+**Fichiers modifiés** :
+- `src/app/photographer/events/[id]/upload/page.tsx` (phase uploading + compression client)
+- `src/components/processing-screen.tsx` (intégration BibRunner)
+- `src/app/api/photos/batch-upload/route.ts` (progression granulaire + finally block)
+- `src/lib/ocr.ts` (timeout 30s Tesseract)
+- `next.config.mjs` (standalone + rewrites)
+- `package.json` (fix build script)
+- `Dockerfile` (prisma CLI dans runner)
+- `render.yaml` (ajout variables AI)
+
 ---
 
 ## 10. Notes techniques
@@ -536,7 +592,9 @@ Focus Racer/
 - **RGPD** : Formulaire public, suppression en cascade, audit trail complet
 - **Marketplace** : Listings, candidatures, reviews avec ratings
 - **Connecteurs** : Architecture modulaire (Njuko, KMS, CSV). Interface `Connector` pour ajout facile.
-- **Stockage** : Local + S3/CloudFront optionnel, URLs signées 24h
-- **Déploiement** : Docker multi-stage + Nginx reverse proxy. Cible Oracle Cloud Free Tier (4 ARM, 24 GB RAM).
+- **Stockage** : Local + S3/CloudFront optionnel, URLs signées 24h. Images servies via `/api/uploads/[...path]` (rewrite transparent)
+- **Déploiement** : Render.com (Node.js natif, PostgreSQL managé). Docker prêt pour Oracle Cloud (futur). GitHub Actions keep-alive /14min.
+- **Upload UX** : Compression Canvas client-side (4000px, q90) → XHR progress → SSE processing. Mini-jeu "Bib Runner" pendant traitement.
+- **Robustesse** : Timeout 30s Tesseract, finally block sur processedCount, rewrite /uploads pour production
 - **Performance** : ~1h pour 10 000 photos (version web + AWS OCR + 4 workers parallèles)
 - **Seed data** : `admin@focusracer.com/admin123`, `photographe@test.com/photo123`, `coureur@test.com/runner123`, `orga@test.com/orga123`

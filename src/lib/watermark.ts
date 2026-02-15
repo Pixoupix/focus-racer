@@ -1,6 +1,7 @@
 import sharp from "sharp";
 import path from "path";
 import fs from "fs/promises";
+import { normalizeImage } from "./storage";
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || "./public/uploads";
 
@@ -28,10 +29,30 @@ export async function generateWatermarkedThumbnail(
   const thumbFilename = `wm_${sourceBasename}.jpg`;
   const thumbPath = path.join(thumbDir, thumbFilename);
 
-  const image = sharp(fullSourcePath);
-  const metadata = await image.metadata();
-  const width = metadata.width || 800;
-  const height = metadata.height || 600;
+  let imageSource: string | Buffer = fullSourcePath;
+  let width = 800;
+  let height = 600;
+
+  try {
+    // Try to read metadata normally
+    const image = sharp(fullSourcePath);
+    const metadata = await image.metadata();
+    width = metadata.width || 800;
+    height = metadata.height || 600;
+  } catch {
+    console.warn(`Metadata read failed for ${sourcePath}, attempting normalization...`);
+    try {
+      // Normalize the image first
+      imageSource = await normalizeImage(fullSourcePath);
+      const metadata = await sharp(imageSource).metadata();
+      width = metadata.width || 800;
+      height = metadata.height || 600;
+      console.log(`Successfully normalized ${sourcePath}`);
+    } catch (normalizeError) {
+      console.error(`Failed to normalize ${sourcePath}:`, normalizeError);
+      throw new Error(`Unable to process image for watermarking: ${sourcePath}`);
+    }
+  }
 
   // Create SVG watermark overlay with repeated diagonal text
   const fontSize = Math.max(Math.round(width / 20), 16);
@@ -52,7 +73,7 @@ export async function generateWatermarkedThumbnail(
   );
 
   // Source is already web-optimized (max 1600px), resize to 1200px for thumbnail
-  await sharp(fullSourcePath)
+  await sharp(imageSource)
     .resize(1200, 1200, { fit: "inside", withoutEnlargement: true })
     .composite([
       {

@@ -18,6 +18,23 @@ export async function ensureUploadDir(eventId: string): Promise<string> {
 }
 
 /**
+ * Normalize problematic images (old JPEG formats, corrupted headers, etc.)
+ * by converting them to a standard format first.
+ * Exported for use in other modules (watermark, image-processing, etc.)
+ */
+export async function normalizeImage(inputPath: string): Promise<Buffer> {
+  try {
+    // Try to read and convert to a standard format without any transformations
+    return await sharp(inputPath, { failOnError: false })
+      .jpeg({ quality: 95, force: true })
+      .toBuffer();
+  } catch (error) {
+    console.error("Failed to normalize image:", error);
+    throw error;
+  }
+}
+
+/**
  * Generate a web-optimized version of the photo.
  * Resized to max 1600px, JPEG quality 80 → typically 200-400 KB.
  * Used for: AI pipeline (OCR, face, labels), web gallery display.
@@ -33,13 +50,37 @@ async function generateWebVersion(
   const webFilename = `web_${path.parse(filename).name}.jpg`;
   const webPath = path.join(webDir, webFilename);
 
-  await sharp(originalPath)
-    .resize(WEB_MAX_DIMENSION, WEB_MAX_DIMENSION, {
-      fit: "inside",
-      withoutEnlargement: true,
-    })
-    .jpeg({ quality: WEB_JPEG_QUALITY, mozjpeg: true })
-    .toFile(webPath);
+  try {
+    // Try normal processing first
+    await sharp(originalPath)
+      .resize(WEB_MAX_DIMENSION, WEB_MAX_DIMENSION, {
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .jpeg({ quality: WEB_JPEG_QUALITY, mozjpeg: true })
+      .toFile(webPath);
+  } catch {
+    console.warn(`Standard processing failed for ${filename}, attempting normalization...`);
+
+    try {
+      // If standard processing fails, normalize the image first
+      const normalizedBuffer = await normalizeImage(originalPath);
+
+      // Then process the normalized version
+      await sharp(normalizedBuffer)
+        .resize(WEB_MAX_DIMENSION, WEB_MAX_DIMENSION, {
+          fit: "inside",
+          withoutEnlargement: true,
+        })
+        .jpeg({ quality: WEB_JPEG_QUALITY, mozjpeg: true })
+        .toFile(webPath);
+
+      console.log(`Successfully normalized and processed ${filename}`);
+    } catch (normalizeError) {
+      console.error(`Failed to normalize ${filename}:`, normalizeError);
+      throw new Error(`Unable to process image: ${filename}. The file may be corrupted or in an unsupported format.`);
+    }
+  }
 
   const eventId = path.basename(eventDir);
   return {

@@ -42,7 +42,6 @@ export async function GET(
         orderItems: {
           include: {
             order: true,
-            pricePack: true,
           },
         },
       },
@@ -123,9 +122,9 @@ export async function GET(
     // Revenue stats
     const completedOrders = photos.flatMap((p) =>
       p.orderItems
-        .filter((item) => item.order.status === "completed")
+        .filter((item) => item.order.status === "PAID")
         .map((item) => ({
-          amount: item.pricePack.price,
+          amount: item.unitPrice,
           orderId: item.order.id,
         }))
     );

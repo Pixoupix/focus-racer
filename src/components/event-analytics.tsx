@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { AnalyticsVisual } from "@/components/analytics-visual";
 import {
   ImageIcon,
   Hash,
@@ -191,6 +192,16 @@ export function EventAnalytics({ eventId }: { eventId: string }) {
         </Card>
 
       </div>
+
+      {/* Visual Analytics Summary */}
+      <AnalyticsVisual
+        totalPhotos={summary.totalPhotos}
+        photosWithBibs={summary.photosWithBibs}
+        orphanPhotos={summary.orphanPhotos}
+        totalAssociations={summary.totalAssociations}
+        uniqueBibs={summary.uniqueBibs}
+        avgPhotosPerBib={summary.avgPhotosPerBib}
+      />
 
       {/* Secondary Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -72,7 +72,7 @@ export async function GET(
 
     const avgPhotosPerBib =
       uniqueBibs.size > 0
-        ? photosWithBibs.length / uniqueBibs.size
+        ? totalAssociations / uniqueBibs.size
         : 0;
 
     // Processing time (first photo to last processed photo)

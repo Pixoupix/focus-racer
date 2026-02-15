@@ -201,6 +201,8 @@ export function EventAnalytics({ eventId }: { eventId: string }) {
         totalAssociations={summary.totalAssociations}
         uniqueBibs={summary.uniqueBibs}
         avgPhotosPerBib={summary.avgPhotosPerBib}
+        avgProcessingTime={summary.avgProcessingTime}
+        totalProcessingTime={summary.totalProcessingTime}
       />
 
       {/* Secondary Stats Grid */}

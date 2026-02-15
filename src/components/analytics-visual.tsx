@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ImageIcon, Hash, TrendingUp } from "lucide-react";
+import { ImageIcon, Hash, Zap, Clock, TrendingUp } from "lucide-react";
 
 interface AnalyticsVisualProps {
   totalPhotos: number;
@@ -8,6 +8,8 @@ interface AnalyticsVisualProps {
   totalAssociations: number;
   uniqueBibs: number;
   avgPhotosPerBib: number;
+  avgProcessingTime: number;
+  totalProcessingTime: number;
 }
 
 export function AnalyticsVisual({
@@ -17,181 +19,184 @@ export function AnalyticsVisual({
   totalAssociations,
   uniqueBibs,
   avgPhotosPerBib,
+  avgProcessingTime,
+  totalProcessingTime,
 }: AnalyticsVisualProps) {
   const sortedPercentage = totalPhotos > 0 ? (photosWithBibs / totalPhotos) * 100 : 0;
-  const orphanPercentage = totalPhotos > 0 ? (orphanPhotos / totalPhotos) * 100 : 0;
+  const bibsPerPhoto = photosWithBibs > 0 ? totalAssociations / photosWithBibs : 0;
 
   return (
-    <Card className="bg-gradient-to-br from-slate-50 to-blue-50/30 border-2">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-blue-600" />
-          Vue d&apos;ensemble des performances
-        </CardTitle>
+    <Card className="bg-white shadow-sm border-slate-200/60 overflow-hidden">
+      <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-slate-50/50 to-transparent pb-4">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg font-semibold text-slate-900 flex items-center gap-2.5">
+            <div className="p-1.5 rounded-lg bg-blue-50">
+              <TrendingUp className="h-4 w-4 text-blue-600" />
+            </div>
+            Vue d&apos;ensemble
+          </CardTitle>
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Temps réel
+          </div>
+        </div>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Column 1: Photos Breakdown */}
-          <div className="space-y-4">
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-100 mb-3">
-                <ImageIcon className="h-10 w-10 text-blue-600" />
+      <CardContent className="p-6">
+        {/* Main metrics row */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-6 mb-8">
+          {/* Total Photos */}
+          <div className="group">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="p-1.5 rounded-md bg-slate-100 group-hover:bg-slate-200 transition-colors">
+                <ImageIcon className="h-3.5 w-3.5 text-slate-600" />
               </div>
-              <h3 className="text-4xl font-bold text-slate-900">{totalPhotos}</h3>
-              <p className="text-sm text-muted-foreground">Photos totales</p>
+              <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Photos</span>
             </div>
-
-            {/* Progress bars */}
-            <div className="space-y-3">
-              {/* Sorted photos */}
-              <div>
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-emerald-700 font-medium">Photos triées</span>
-                  <span className="text-emerald-700 font-bold">{photosWithBibs}</span>
-                </div>
-                <div className="h-3 bg-slate-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 transition-all duration-500"
-                    style={{ width: `${sortedPercentage}%` }}
-                  />
-                </div>
-                <p className="text-xs text-right text-muted-foreground mt-0.5">
-                  {sortedPercentage.toFixed(1)}%
-                </p>
-              </div>
-
-              {/* Orphan photos */}
-              <div>
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-amber-700 font-medium">Photos orphelines</span>
-                  <span className="text-amber-700 font-bold">{orphanPhotos}</span>
-                </div>
-                <div className="h-3 bg-slate-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-amber-500 to-amber-600 transition-all duration-500"
-                    style={{ width: `${orphanPercentage}%` }}
-                  />
-                </div>
-                <p className="text-xs text-right text-muted-foreground mt-0.5">
-                  {orphanPercentage.toFixed(1)}%
-                </p>
-              </div>
-            </div>
+            <p className="text-3xl font-bold text-slate-900 mb-1">{totalPhotos}</p>
+            <p className="text-xs text-slate-500">fichiers uploadés</p>
           </div>
 
-          {/* Column 2: Associations */}
-          <div className="space-y-4">
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-purple-100 mb-3">
-                <svg
-                  className="h-10 w-10 text-purple-600"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
+          {/* Photos Sorted */}
+          <div className="group">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="p-1.5 rounded-md bg-emerald-50 group-hover:bg-emerald-100 transition-colors">
+                <svg className="h-3.5 w-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h3 className="text-4xl font-bold text-purple-600">{totalAssociations}</h3>
-              <p className="text-sm text-muted-foreground">Associations photo-dossard</p>
+              <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Triées</span>
             </div>
-
-            <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-              <div className="text-center">
-                <p className="text-xs text-purple-700 mb-2">Facteur de multiplication</p>
-                <p className="text-2xl font-bold text-purple-600">
-                  ×{photosWithBibs > 0 ? (totalAssociations / photosWithBibs).toFixed(2) : "0"}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  associations par photo triée
-                </p>
-              </div>
-            </div>
+            <p className="text-3xl font-bold text-emerald-600 mb-1">{photosWithBibs}</p>
+            <p className="text-xs text-slate-500">{sortedPercentage.toFixed(1)}% du total</p>
           </div>
 
-          {/* Column 3: Bibs Performance */}
-          <div className="space-y-4">
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-100 mb-3">
-                <Hash className="h-10 w-10 text-blue-600" />
+          {/* Associations */}
+          <div className="group">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="p-1.5 rounded-md bg-purple-50 group-hover:bg-purple-100 transition-colors">
+                <Zap className="h-3.5 w-3.5 text-purple-600" />
               </div>
-              <h3 className="text-4xl font-bold text-slate-900">{uniqueBibs}</h3>
-              <p className="text-sm text-muted-foreground">Dossards uniques</p>
+              <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Associations</span>
             </div>
+            <p className="text-3xl font-bold text-purple-600 mb-1">{totalAssociations}</p>
+            <p className="text-xs text-slate-500">{bibsPerPhoto.toFixed(1)} dossards/photo</p>
+          </div>
 
-            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-              <div className="text-center">
-                <p className="text-xs text-blue-700 mb-2">Couverture moyenne</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {avgPhotosPerBib.toFixed(1)}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  photos par coureur
-                </p>
+          {/* Unique Bibs */}
+          <div className="group">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="p-1.5 rounded-md bg-blue-50 group-hover:bg-blue-100 transition-colors">
+                <Hash className="h-3.5 w-3.5 text-blue-600" />
               </div>
+              <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Dossards</span>
             </div>
+            <p className="text-3xl font-bold text-blue-600 mb-1">{uniqueBibs}</p>
+            <p className="text-xs text-slate-500">{avgPhotosPerBib.toFixed(1)} photos/coureur</p>
+          </div>
 
-            {/* Coverage indicator */}
-            <div className="bg-gradient-to-r from-blue-50 to-emerald-50 rounded-lg p-3 border border-blue-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {avgPhotosPerBib >= 3 ? (
-                    <>
-                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-xs font-medium text-emerald-700">
-                        Excellente couverture
-                      </span>
-                    </>
-                  ) : avgPhotosPerBib >= 1.5 ? (
-                    <>
-                      <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                      <span className="text-xs font-medium text-blue-700">
-                        Bonne couverture
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                      <span className="text-xs font-medium text-amber-700">
-                        Couverture limitée
-                      </span>
-                    </>
-                  )}
-                </div>
+          {/* Processing Time */}
+          <div className="group">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="p-1.5 rounded-md bg-amber-50 group-hover:bg-amber-100 transition-colors">
+                <Clock className="h-3.5 w-3.5 text-amber-600" />
               </div>
+              <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Traitement</span>
             </div>
+            <p className="text-3xl font-bold text-amber-600 mb-1">
+              {Math.floor(totalProcessingTime / 60)}<span className="text-xl">m</span>
+            </p>
+            <p className="text-xs text-slate-500">{avgProcessingTime}s par photo</p>
           </div>
         </div>
 
-        {/* Bottom summary row */}
-        <div className="mt-6 pt-6 border-t border-slate-200">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div>
-              <p className="text-2xl font-bold text-slate-900">{sortedPercentage.toFixed(0)}%</p>
-              <p className="text-xs text-muted-foreground">Taux de tri</p>
+        {/* Visual breakdown */}
+        <div className="space-y-6">
+          {/* Photos distribution */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-semibold text-slate-700">Répartition des photos</h4>
+              <span className="text-xs text-slate-500">{totalPhotos} total</span>
             </div>
-            <div>
-              <p className="text-2xl font-bold text-purple-600">
-                {photosWithBibs > 0 ? (totalAssociations / photosWithBibs).toFixed(1) : "0"}
-              </p>
-              <p className="text-xs text-muted-foreground">Dossards/photo en moyenne</p>
+            <div className="relative">
+              <div className="flex h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all duration-700 ease-out"
+                  style={{ width: `${sortedPercentage}%` }}
+                  title={`${photosWithBibs} photos triées`}
+                />
+                <div
+                  className="bg-gradient-to-r from-amber-300 to-amber-400 transition-all duration-700 ease-out"
+                  style={{ width: `${100 - sortedPercentage}%` }}
+                  title={`${orphanPhotos} photos orphelines`}
+                />
+              </div>
+              <div className="flex justify-between mt-2 text-xs">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span className="text-slate-600">
+                    {photosWithBibs} triées <span className="text-slate-400">({sortedPercentage.toFixed(1)}%)</span>
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-amber-400" />
+                  <span className="text-slate-600">
+                    {orphanPhotos} orphelines <span className="text-slate-400">({(100 - sortedPercentage).toFixed(1)}%)</span>
+                  </span>
+                </div>
+              </div>
             </div>
-            <div>
-              <p className="text-2xl font-bold text-blue-600">
-                {uniqueBibs > 0 ? (totalAssociations / uniqueBibs).toFixed(1) : "0"}
+          </div>
+
+          {/* Performance indicators */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-slate-100">
+            {/* Coverage quality */}
+            <div className="text-center p-4 rounded-lg bg-gradient-to-br from-slate-50 to-transparent border border-slate-100">
+              <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-sm mb-2">
+                {avgPhotosPerBib >= 3 ? (
+                  <span className="text-lg">🏆</span>
+                ) : avgPhotosPerBib >= 1.5 ? (
+                  <span className="text-lg">✨</span>
+                ) : (
+                  <span className="text-lg">📊</span>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 mb-1">Couverture</p>
+              <p className="text-sm font-semibold text-slate-700">
+                {avgPhotosPerBib >= 3 ? "Excellente" : avgPhotosPerBib >= 1.5 ? "Bonne" : "Standard"}
               </p>
-              <p className="text-xs text-muted-foreground">Photos/coureur</p>
             </div>
-            <div>
-              <p className="text-2xl font-bold text-emerald-600">
-                {totalPhotos > 0 ? ((totalAssociations / totalPhotos) * 100).toFixed(0) : "0"}%
+
+            {/* Success rate */}
+            <div className="text-center p-4 rounded-lg bg-gradient-to-br from-slate-50 to-transparent border border-slate-100">
+              <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-sm mb-2">
+                <span className="text-sm font-bold text-emerald-600">{sortedPercentage.toFixed(0)}%</span>
+              </div>
+              <p className="text-xs text-slate-500 mb-1">Taux de tri</p>
+              <p className="text-sm font-semibold text-slate-700">
+                {sortedPercentage >= 90 ? "Optimal" : sortedPercentage >= 70 ? "Bon" : "À améliorer"}
               </p>
-              <p className="text-xs text-muted-foreground">Taux d&apos;utilité global</p>
+            </div>
+
+            {/* Efficiency */}
+            <div className="text-center p-4 rounded-lg bg-gradient-to-br from-slate-50 to-transparent border border-slate-100">
+              <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-sm mb-2">
+                <span className="text-sm font-bold text-purple-600">×{bibsPerPhoto.toFixed(1)}</span>
+              </div>
+              <p className="text-xs text-slate-500 mb-1">Efficacité</p>
+              <p className="text-sm font-semibold text-slate-700">
+                {bibsPerPhoto >= 2 ? "Groupe dense" : bibsPerPhoto >= 1.2 ? "Standard" : "Solo"}
+              </p>
+            </div>
+
+            {/* Processing speed */}
+            <div className="text-center p-4 rounded-lg bg-gradient-to-br from-slate-50 to-transparent border border-slate-100">
+              <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-sm mb-2">
+                <span className="text-sm font-bold text-amber-600">{avgProcessingTime}s</span>
+              </div>
+              <p className="text-xs text-slate-500 mb-1">Vitesse</p>
+              <p className="text-sm font-semibold text-slate-700">
+                {avgProcessingTime <= 2 ? "Rapide" : avgProcessingTime <= 5 ? "Normal" : "Lent"}
+              </p>
             </div>
           </div>
         </div>

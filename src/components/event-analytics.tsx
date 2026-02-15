@@ -116,7 +116,7 @@ export function EventAnalytics({ eventId }: { eventId: string }) {
     );
   }
 
-  const { summary, quality, ocr, revenue, topBibs, orphanPhotos } = analytics;
+  const { summary, quality, revenue, topBibs, orphanPhotos } = analytics;
 
   return (
     <div className="space-y-8">
@@ -266,61 +266,6 @@ export function EventAnalytics({ eventId }: { eventId: string }) {
           </CardContent>
         </Card>
       </div>
-
-      {/* OCR Provider Comparison */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Performance OCR par Provider</CardTitle>
-          <CardDescription>Comparaison Tesseract vs AWS Rekognition</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Tesseract */}
-            <div className="border rounded-lg p-4">
-              <h3 className="font-semibold mb-2 flex items-center gap-2">
-                <Badge variant="secondary">Tesseract (Gratuit)</Badge>
-              </h3>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Photos traitées:</span>
-                  <span className="font-medium">{ocr.tesseract.total}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Réussites:</span>
-                  <span className="font-medium">{ocr.tesseract.success}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Taux de réussite:</span>
-                  <span className={`font-bold ${ocr.tesseract.successRate < 50 ? 'text-red-600' : 'text-yellow-600'}`}>
-                    {ocr.tesseract.successRate}%
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* AWS Rekognition */}
-            <div className="border rounded-lg p-4 bg-emerald-50 border-emerald-200">
-              <h3 className="font-semibold mb-2 flex items-center gap-2">
-                <Badge className="bg-emerald-600">AWS Rekognition (Premium)</Badge>
-              </h3>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Photos traitées:</span>
-                  <span className="font-medium">{ocr.aws.total}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Réussites:</span>
-                  <span className="font-medium">{ocr.aws.success}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Taux de réussite:</span>
-                  <span className="font-bold text-emerald-600">{ocr.aws.successRate}%</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Top Dossards */}
       {topBibs.length > 0 && (

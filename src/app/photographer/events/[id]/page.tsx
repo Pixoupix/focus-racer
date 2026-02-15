@@ -311,12 +311,6 @@ export default function EventDetailPage({
 
   if (!event) return null;
 
-  const uniqueBibNumbers = [
-    ...new Set(
-      event.photos.flatMap((photo) => photo.bibNumbers.map((bib) => bib.number))
-    ),
-  ].sort((a, b) => parseInt(a) - parseInt(b));
-
   const statusInfo = STATUS_LABELS[event.status || "DRAFT"];
 
   return (
@@ -419,18 +413,6 @@ export default function EventDetailPage({
           </CardHeader>
           <CardContent>
             <div className="flex gap-4 flex-wrap items-center">
-              <Badge variant="secondary" className="bg-emerald/10 text-emerald">
-                {event._count.photos} photo{event._count.photos !== 1 ? "s" : ""}
-              </Badge>
-              <Badge variant="outline" className="border-emerald/30 text-emerald">
-                {uniqueBibNumbers.length} dossard{uniqueBibNumbers.length !== 1 ? "s" : ""} detecte{uniqueBibNumbers.length !== 1 ? "s" : ""}
-              </Badge>
-              {event._count.startListEntries > 0 && (
-                <Badge variant="outline" className="border-emerald/30 text-emerald">
-                  {event._count.startListEntries} coureur{event._count.startListEntries !== 1 ? "s" : ""} inscrit{event._count.startListEntries !== 1 ? "s" : ""}
-                </Badge>
-              )}
-              <Separator orientation="vertical" className="h-5" />
               <Dialog open={editOpen} onOpenChange={setEditOpen}>
                 <DialogTrigger asChild>
                   <Button variant="ghost" size="sm">Modifier</Button>

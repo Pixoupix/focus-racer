@@ -58,11 +58,8 @@ export default function EventDetailPage({
   const { toast } = useToast();
   const [event, setEvent] = useState<EventDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [filterBib, setFilterBib] = useState("");
   const [editOpen, setEditOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [addBibPhotoId, setAddBibPhotoId] = useState<string | null>(null);
-  const [newBibNumber, setNewBibNumber] = useState("");
   const [isUploadingBranding, setIsUploadingBranding] = useState(false);
   const [isNotifying, setIsNotifying] = useState(false);
   const [notifyStatus, setNotifyStatus] = useState<{ pending: number; notified: number; withEmail: number } | null>(null);
@@ -303,54 +300,6 @@ export default function EventDetailPage({
     }
   };
 
-  const handleAddBib = async (photoId: string) => {
-    if (!newBibNumber.trim()) return;
-    try {
-      const response = await fetch(`/api/photos/${photoId}/bib-numbers`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ number: newBibNumber.trim() }),
-      });
-      if (response.ok) {
-        setNewBibNumber("");
-        setAddBibPhotoId(null);
-        fetchEvent();
-        toast({ title: "Dossard ajoute" });
-      }
-    } catch {
-      toast({ title: "Erreur", variant: "destructive" });
-    }
-  };
-
-  const handleRemoveBib = async (photoId: string, bibId: string) => {
-    try {
-      const response = await fetch(`/api/photos/${photoId}/bib-numbers`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bibId }),
-      });
-      if (response.ok) {
-        fetchEvent();
-        toast({ title: "Dossard retire" });
-      }
-    } catch {
-      toast({ title: "Erreur", variant: "destructive" });
-    }
-  };
-
-  const handleDeletePhoto = async (photoId: string) => {
-    if (!confirm("Supprimer cette photo ?")) return;
-    try {
-      const response = await fetch(`/api/photos/${photoId}`, { method: "DELETE" });
-      if (response.ok) {
-        fetchEvent();
-        toast({ title: "Photo supprimee" });
-      }
-    } catch {
-      toast({ title: "Erreur", variant: "destructive" });
-    }
-  };
-
   if (status === "loading" || isLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -360,12 +309,6 @@ export default function EventDetailPage({
   }
 
   if (!event) return null;
-
-  const filteredPhotos = filterBib
-    ? event.photos.filter((photo) =>
-        photo.bibNumbers.some((bib) => bib.number.includes(filterBib))
-      )
-    : event.photos;
 
   const uniqueBibNumbers = [
     ...new Set(
@@ -470,9 +413,9 @@ export default function EventDetailPage({
                     Mode Live
                   </Button>
                 </Link>
-                <Link href={`/photographer/events/${id}/analytics`}>
-                  <Button size="sm" variant="outline" className="text-blue-600 border-blue-600/30 hover:bg-blue-50 transition-all duration-200">
-                    📊 Analytics
+                <Link href={`/photographer/events/${id}/photos`}>
+                  <Button size="sm" variant="outline" className="text-purple-600 border-purple-600/30 hover:bg-purple-50 transition-all duration-200">
+                    📸 Consulter les photos
                   </Button>
                 </Link>
               </div>
@@ -627,133 +570,17 @@ export default function EventDetailPage({
           </CardContent>
         </Card>
 
-        {/* Photo filter */}
-        {event.photos.length > 0 && (
-          <div className="mb-6">
-            <Input
-              placeholder="Filtrer par numero de dossard..."
-              value={filterBib}
-              onChange={(e) => setFilterBib(e.target.value)}
-              className="max-w-xs"
+        {/* Analytics Section */}
+        <Card className="bg-white border-0 shadow-sm rounded-2xl overflow-hidden">
+          <CardContent className="p-0">
+            <iframe
+              src={`/photographer/events/${id}/analytics`}
+              className="w-full border-0"
+              style={{ minHeight: "1200px", height: "100vh" }}
+              title="Analytics"
             />
-          </div>
-        )}
-
-        {/* Photo grid */}
-        {filteredPhotos.length === 0 ? (
-          <Card className="bg-white border-0 shadow-sm rounded-2xl">
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground mb-4">
-                {event.photos.length === 0
-                  ? "Aucune photo n'a encore ete ajoutee"
-                  : "Aucune photo ne correspond a ce filtre"}
-              </p>
-              {event.photos.length === 0 && (
-                <Link href={`/photographer/events/${id}/upload`}>
-                  <Button className="bg-emerald hover:bg-emerald-hover text-white shadow-emerald transition-all duration-200">Ajouter des photos</Button>
-                </Link>
-              )}
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filteredPhotos.map((photo) => (
-              <Card key={photo.id} className="overflow-hidden group bg-white border-0 shadow-sm rounded-2xl hover:shadow-glass-lg transition-all duration-200">
-                <div className="aspect-square relative">
-                  <Image
-                    src={photo.webPath || photo.path}
-                    alt={photo.originalName}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                  />
-                  <button
-                    onClick={() => handleDeletePhoto(photo.id)}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="Supprimer"
-                  >
-                    &times;
-                  </button>
-                </div>
-                <CardContent className="p-3 space-y-2">
-                  <div className="flex flex-wrap gap-1">
-                    {photo.bibNumbers.length > 0 ? (
-                      photo.bibNumbers.map((bib) => (
-                        <Badge
-                          key={bib.id}
-                          variant="secondary"
-                          className="text-xs cursor-pointer hover:bg-red-100 group/bib bg-emerald/10 text-emerald"
-                          onClick={() => handleRemoveBib(photo.id, bib.id)}
-                          title="Cliquez pour retirer ce dossard"
-                        >
-                          #{bib.number} <span className="ml-1 opacity-0 group-hover/bib:opacity-100">&times;</span>
-                        </Badge>
-                      ))
-                    ) : (
-                      <span className="text-xs text-muted-foreground">
-                        Aucun dossard
-                      </span>
-                    )}
-                  </div>
-                  {addBibPhotoId === photo.id ? (
-                    <div className="flex gap-1">
-                      <Input
-                        value={newBibNumber}
-                        onChange={(e) => setNewBibNumber(e.target.value)}
-                        placeholder="N"
-                        className="h-7 text-xs"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            handleAddBib(photo.id);
-                          }
-                          if (e.key === "Escape") setAddBibPhotoId(null);
-                        }}
-                        autoFocus
-                      />
-                      <Button size="sm" className="h-7 text-xs px-2 bg-emerald hover:bg-emerald-hover text-white shadow-emerald transition-all duration-200" onClick={() => handleAddBib(photo.id)}>
-                        OK
-                      </Button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => { setAddBibPhotoId(photo.id); setNewBibNumber(""); }}
-                      className="text-xs text-emerald hover:text-emerald-dark transition-colors"
-                    >
-                      + Ajouter un dossard
-                    </button>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-
-        {/* Bib number list */}
-        {uniqueBibNumbers.length > 0 && (
-          <Card className="mt-8 bg-white border-0 shadow-sm rounded-2xl">
-            <CardHeader>
-              <CardTitle className="text-navy">Dossards detectes</CardTitle>
-              <CardDescription>
-                Cliquez sur un dossard pour filtrer les photos
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {uniqueBibNumbers.map((num) => (
-                  <Badge
-                    key={num}
-                    variant={filterBib === num ? "default" : "outline"}
-                    className={filterBib === num ? "cursor-pointer bg-emerald hover:bg-emerald-hover" : "cursor-pointer border-emerald/30 text-emerald hover:bg-emerald-50"}
-                    onClick={() => setFilterBib(filterBib === num ? "" : num)}
-                  >
-                    #{num}
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+          </CardContent>
+        </Card>
     </div>
   );
 }

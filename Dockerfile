@@ -53,8 +53,7 @@ COPY --from=builder /app/prisma ./prisma
 # Prisma CLI for migrate deploy at runtime
 COPY --from=deps /app/node_modules/prisma ./node_modules/prisma
 COPY --from=deps /app/node_modules/@prisma ./node_modules/@prisma
-
-# Sharp native binaries (included via standalone)
+COPY --from=deps /app/node_modules/.bin ./node_modules/.bin
 
 # Create uploads directory with correct permissions
 RUN mkdir -p /app/public/uploads && chown -R nextjs:nodejs /app/public/uploads
@@ -64,4 +63,4 @@ USER nextjs
 EXPOSE 3000
 
 # Run database migration then start the server
-CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
+CMD ["sh", "-c", "echo 'Starting Focus Racer...' && echo 'Running Prisma migrations...' && npx prisma migrate deploy 2>&1 && echo 'Migrations done. Starting server...' && node server.js"]

@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
-  // Disable type checking and linting during build to save memory (512MB limit on Render free tier)
+  // Keep build checks disabled for faster builds (enable if needed for debugging)
   typescript: {
     ignoreBuildErrors: true,
   },

@@ -362,9 +362,9 @@ export async function POST(request: NextRequest) {
     const photos: { id: string; webBuffer: Buffer; originalName: string; index: number }[] = [];
     const failedFiles: string[] = [];
 
-    // Process files in batches of 10 to stay under Cloudflare 100s timeout
-    // With chunked upload from client (40 photos/chunk), each chunk processes ~4 batches
-    const BATCH_SIZE = 10;
+    // Process files in batches of 5 to stay under Cloudflare 100s timeout
+    // With chunked upload from client (10 photos/chunk), each chunk processes 2 batches
+    const BATCH_SIZE = 5;
     for (let batchStart = 0; batchStart < files.length; batchStart += BATCH_SIZE) {
       const batch = files.slice(batchStart, batchStart + BATCH_SIZE);
       const batchPromises = batch.map(async (file, batchIndex) => {

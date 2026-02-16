@@ -308,7 +308,7 @@ export default function UploadPage({
     setUploadStep("sending");
     setUploadProgress(0);
 
-    const CHUNK_SIZE = 40; // Upload max 40 photos per request (stay under Cloudflare 100s timeout)
+    const CHUNK_SIZE = 10; // Upload max 10 photos per request (Render CPU is slow, ~3s per photo)
     const chunks = [];
     for (let i = 0; i < compressed.length; i += CHUNK_SIZE) {
       chunks.push(compressed.slice(i, i + CHUNK_SIZE));
@@ -332,7 +332,7 @@ export default function UploadPage({
           });
 
           const xhr = new XMLHttpRequest();
-          xhr.timeout = 120000; // 2 minutes per chunk (shorter since chunks are smaller)
+          xhr.timeout = 300000; // 5 minutes per chunk (Render free tier CPU is slow)
 
           xhr.upload.onprogress = (e) => {
             if (e.lengthComputable) {

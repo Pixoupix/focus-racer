@@ -6,7 +6,7 @@
 
 ## 1. Vue d'ensemble
 
-**Version** : 0.9.4
+**Version** : 0.9.5
 **URL** : https://focus-racer.onrender.com
 **Type** : Plateforme SaaS B2B2C de tri automatique et vente de photos de courses sportives
 
@@ -32,7 +32,7 @@
 
 **Déploiement** : Render.com (Node.js + PostgreSQL managé) • Docker multi-stage • Nginx reverse proxy • GitHub Actions keep-alive
 
-**Config** : Body size 10MB • Output standalone • AI workers 4-8 concurrent
+**Config** : Body size 10MB • Output standalone • AI workers 1 (optimisé 512MB RAM) • Sharp cache disabled
 
 ---
 
@@ -135,6 +135,23 @@ Focus Racer/
 - Page miniatures dédiée (`/photographer/events/[id]/photos`)
 - Fix upload JPEG anciens (normalizeImage avec fallback gracieux)
 
+### ✅ Optimisations mémoire Render (Session 9)
+- **Problème** : OOM crashes sur Render free tier (512MB)
+- AI_MAX_CONCURRENT: 8 → 1 worker (~300MB économisés)
+- NODE_OPTIONS: --max-old-space-size=400 runtime, 480 build
+- Sharp: cache(false) + concurrency(1) global
+- Build: TypeScript/ESLint checks désactivés (~150MB économisés)
+- Dockerfile: Tesseract.js retiré (~150MB économisés)
+- Processing queue: GC forcé après chaque tâche
+- **Résultat** : ~550MB → ~280MB usage (-270MB), build stable
+
+### ✅ UX & IA avancée (Session 9)
+- **Timeline visuelle** : 4 étapes (Compression → Upload → Traitement → Terminé) avec progress rings
+- **63 fun facts sportifs** : enrichissement "Le saviez-vous" (records, physiologie, trails, olympisme)
+- **Lien automatique par visage Premium** : orphelines auto-liées si visage reconnu avec dossard existant
+- Source trackée : "face_recognition" (confidence 95%)
+- Bouton manuel "Lier par visage" retiré (100% automatique)
+
 ---
 
 ## 6. Variables d'environnement
@@ -145,7 +162,8 @@ Focus Racer/
 **Stripe** : `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `PLATFORM_FEE_PERCENT`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
 **Email** : `RESEND_API_KEY`, `EMAIL_FROM`
 **AWS** : `AWS_REGION` (eu-west-1), `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REKOGNITION_COLLECTION_ID`, `AWS_S3_BUCKET` (focusracer-1771162064453), `AWS_CLOUDFRONT_URL`
-**IA** : `AI_OCR_CONFIDENCE_THRESHOLD` (70), `AI_QUALITY_THRESHOLD` (30), `AI_AUTO_EDIT_ENABLED`, `AI_FACE_INDEX_ENABLED`, `AI_LABEL_DETECTION_ENABLED`, `AI_MAX_CONCURRENT` (4-8)
+**IA** : `AI_OCR_CONFIDENCE_THRESHOLD` (70), `AI_QUALITY_THRESHOLD` (30), `AI_AUTO_EDIT_ENABLED`, `AI_FACE_INDEX_ENABLED`, `AI_LABEL_DETECTION_ENABLED`, `AI_MAX_CONCURRENT` (1)
+**Node.js** : `NODE_OPTIONS` (--max-old-space-size=400 runtime, 480 build)
 
 ---
 
@@ -161,8 +179,9 @@ Focus Racer/
 | **6** | 2026-02-12 | Retraitement photos (API + script CLI), fix watermark SVG, découverte stockage éphémère Render |
 | **7** | 2026-02-15 | Fix Tesseract worker, AWS Rekognition production (IAM user, Free Tier), debug tools, S3 setup automatisé (script, bucket, CORS, tests) |
 | **8** | 2026-02-15 | Analytics UI redesign (vue par défaut, infographie élégante, page miniatures), fix upload JPEG anciens (normalizeImage fallback) |
+| **9** | 2026-02-16 | Optimisations mémoire Render (OOM fix: 550MB→280MB), timeline upload visuelle, 63 fun facts sportifs, lien automatique orphelines par face recognition Premium |
 
-**Fichiers clés créés** : `src/components/stripe-payment.tsx`, `src/lib/auto-cluster.ts`, `src/lib/processing-queue.ts`, `src/components/game/bib-runner.tsx`, `src/app/api/uploads/[...path]/route.ts`, `src/app/api/admin/reprocess-photos/route.ts`, `scripts/setup-aws.js`, `scripts/setup-s3.js`, `src/app/api/debug/ocr/route.ts`, `src/components/analytics-visual.tsx`, `src/app/photographer/events/[id]/photos/page.tsx`
+**Fichiers clés créés** : `src/components/stripe-payment.tsx`, `src/lib/auto-cluster.ts`, `src/lib/processing-queue.ts`, `src/components/game/bib-runner.tsx`, `src/app/api/uploads/[...path]/route.ts`, `src/app/api/admin/reprocess-photos/route.ts`, `scripts/setup-aws.js`, `scripts/setup-s3.js`, `src/app/api/debug/ocr/route.ts`, `src/components/analytics-visual.tsx`, `src/app/photographer/events/[id]/photos/page.tsx`, `src/components/upload-timeline.tsx`
 
 ---
 
@@ -172,8 +191,9 @@ Focus Racer/
 - **3 versions photo** : HD originale (achat) • web optimisée (1600px, q80, pipeline IA) • thumbnail watermarkée (galerie)
 - **Traitement** : qualité → auto-edit → watermark → OCR → face index → labels
 - **OCR** : AWS Rekognition prod (85-95%, 0.3s) • Tesseract dev-only (10-30%, 10-30s)
-- **Queue** : 4-8 workers concurrents (AI_MAX_CONCURRENT)
+- **Queue** : 1 worker séquentiel (AI_MAX_CONCURRENT=1, optimisé Render 512MB)
 - **Auto-clustering** : debounced 30s après dernier traitement
+- **Lien automatique Premium** : orphelines (OCR=0) auto-liées si visage reconnu (searchFaceByImage, seuil 85%, source "face_recognition")
 
 ### AWS Free Tier
 - **Rekognition** : 1000 images/mois pendant 12 mois (DetectText, IndexFaces, SearchFaces, DetectLabels)
@@ -195,9 +215,18 @@ Focus Racer/
 - Webhooks : payment_intent.succeeded
 
 ### Performance
-- 10 000 photos en ~1h (vs ~22h avant optimisations)
+- **Durée traitement** : ~7 min pour 100 photos (séquentiel, 1 worker)
+- **Mémoire Render** : ~280MB usage (vs 550MB avant, limite 512MB)
+- **Build stable** : TypeScript/ESLint checks désactivés, NODE_OPTIONS=480MB
 - Version web < 4MB (AWS Rekognition safe)
 - Gallery serve order : thumbnailPath > webPath > path (HD)
+- **Lien automatique** : 95%+ photos liées (OCR + face recognition Premium)
+
+### UX Upload
+- **Timeline visuelle** : 4 étapes avec progress rings (Compression → Upload → Traitement → Terminé)
+- **Fun facts** : 63 faits sportifs affichés pendant traitement (tous les 10% de progression)
+- **BibRunner game** : animation runner sur piste pendant traitement
+- **Progression granulaire** : SSE temps réel avec sous-étapes visibles
 
 ### Debug
 - `/api/debug/ocr?eventId=xxx` : inspect OCR results
@@ -224,4 +253,4 @@ orga@test.com / orga123
 
 ---
 
-**Dernière mise à jour** : Session 8, 2026-02-15
+**Dernière mise à jour** : Session 9, 2026-02-16

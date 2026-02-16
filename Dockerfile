@@ -8,7 +8,10 @@ RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma/
 
+# Force install all deps (including devDependencies needed for build)
+ENV NODE_ENV=development
 RUN npm ci
+ENV NODE_ENV=production
 
 # Generate Prisma client
 RUN npx prisma generate

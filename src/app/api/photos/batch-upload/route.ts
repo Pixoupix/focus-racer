@@ -19,6 +19,9 @@ import sharp from "sharp";
 sharp.cache(false); // Disable cache to free memory immediately
 sharp.concurrency(1); // Process one image at a time
 
+// Max execution time for large batch uploads (10 minutes)
+export const maxDuration = 600;
+
 async function processPhotoWithProgress(
   photoId: string,
   webBuffer: Buffer,
@@ -359,8 +362,9 @@ export async function POST(request: NextRequest) {
     const photos: { id: string; webBuffer: Buffer; originalName: string; index: number }[] = [];
     const failedFiles: string[] = [];
 
-    // Process files in batches of 5 to avoid overwhelming the server
-    const BATCH_SIZE = 5;
+    // Process files in batches of 10 to stay under Cloudflare 100s timeout
+    // With chunked upload from client (40 photos/chunk), each chunk processes ~4 batches
+    const BATCH_SIZE = 10;
     for (let batchStart = 0; batchStart < files.length; batchStart += BATCH_SIZE) {
       const batch = files.slice(batchStart, batchStart + BATCH_SIZE);
       const batchPromises = batch.map(async (file, batchIndex) => {

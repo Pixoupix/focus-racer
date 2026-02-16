@@ -304,96 +304,107 @@ export default function UploadPage({
       compressed = selectedFiles.map((sf) => sf.file);
     }
 
-    // --- Step 2: Upload via XHR ---
+    // --- Step 2: Chunked upload to avoid Cloudflare 100s timeout ---
     setUploadStep("sending");
     setUploadProgress(0);
 
-    const formData = new FormData();
-    formData.append("eventId", id);
-    formData.append("sessionId", uploadSessionId);
-    formData.append("processingMode", processingMode);
-    compressed.forEach((file) => {
-      formData.append("files", file);
-    });
+    const CHUNK_SIZE = 40; // Upload max 40 photos per request (stay under Cloudflare 100s timeout)
+    const chunks = [];
+    for (let i = 0; i < compressed.length; i += CHUNK_SIZE) {
+      chunks.push(compressed.slice(i, i + CHUNK_SIZE));
+    }
 
-    const xhr = new XMLHttpRequest();
+    try {
+      let totalUploaded = 0;
 
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) {
-        const progress = Math.round((e.loaded / e.total) * 100);
-        setUploadProgress(progress);
+      for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
+        const chunk = chunks[chunkIndex];
+        const isFirstChunk = chunkIndex === 0;
+        const isLastChunk = chunkIndex === chunks.length - 1;
 
-        // When upload reaches 100%, switch to processing immediately
-        if (progress === 100) {
-          setSessionId(uploadSessionId);
-          setPhase("processing");
-        }
-      }
-    };
-
-    xhr.onload = () => {
-      try {
-        // Check if response is empty
-        if (!xhr.responseText || xhr.responseText.trim() === "") {
-          throw new Error("Le serveur n'a pas retourne de reponse. Verifiez que vos images sont valides.");
-        }
-
-        let data;
-        try {
-          data = JSON.parse(xhr.responseText);
-        } catch {
-          console.error("Failed to parse response:", xhr.responseText);
-          throw new Error("Reponse invalide du serveur. Verifiez les logs.");
-        }
-
-        if (xhr.status >= 400) {
-          if (data.code === "INSUFFICIENT_CREDITS") {
-            toast({
-              title: "Credits insuffisants",
-              description: `Vous avez ${credits} credits, il en faut ${selectedFiles.length}.`,
-              variant: "destructive",
-            });
-            setIsUploading(false);
-            setPhase("confirm");
-            return;
-          }
-          throw new Error(data.error || data.details || "Erreur lors de l'upload");
-        }
-
-        // Show warnings if some files failed
-        if (data.warnings) {
-          toast({
-            title: "Attention",
-            description: data.warnings,
-            variant: "default",
+        await new Promise<void>((resolve, reject) => {
+          const formData = new FormData();
+          formData.append("eventId", id);
+          formData.append("sessionId", uploadSessionId);
+          formData.append("processingMode", processingMode);
+          chunk.forEach((file) => {
+            formData.append("files", file);
           });
-        }
 
-        // Session is already set and processing started, response is just for confirmation
-      } catch (error) {
-        console.error("Upload error:", error);
+          const xhr = new XMLHttpRequest();
+          xhr.timeout = 120000; // 2 minutes per chunk (shorter since chunks are smaller)
+
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+              const chunkProgress = (e.loaded / e.total) * (chunk.length / compressed.length);
+              const totalProgress = ((totalUploaded + chunkProgress * chunk.length) / compressed.length) * 100;
+              setUploadProgress(Math.round(totalProgress));
+            }
+          };
+
+          xhr.onload = () => {
+            try {
+              if (!xhr.responseText || xhr.responseText.trim() === "") {
+                throw new Error("Le serveur n'a pas retourne de reponse.");
+              }
+
+              let data;
+              try {
+                data = JSON.parse(xhr.responseText);
+              } catch {
+                console.error("Failed to parse response:", xhr.responseText);
+                throw new Error("Reponse invalide du serveur.");
+              }
+
+              if (xhr.status >= 400) {
+                if (data.code === "INSUFFICIENT_CREDITS") {
+                  reject(new Error("INSUFFICIENT_CREDITS"));
+                  return;
+                }
+                throw new Error(data.error || data.details || "Erreur lors de l'upload");
+              }
+
+              totalUploaded += chunk.length;
+
+              // Switch to processing after last chunk uploaded
+              if (isLastChunk) {
+                setSessionId(uploadSessionId);
+                setPhase("processing");
+              }
+
+              resolve();
+            } catch (error) {
+              reject(error);
+            }
+          };
+
+          xhr.onerror = () => reject(new Error("Erreur reseau"));
+          xhr.ontimeout = () => reject(new Error("Timeout"));
+
+          xhr.open("POST", "/api/photos/batch-upload");
+          xhr.send(formData);
+        });
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+
+      if (error instanceof Error && error.message === "INSUFFICIENT_CREDITS") {
+        toast({
+          title: "Credits insuffisants",
+          description: `Vous avez ${credits} credits, il en faut ${selectedFiles.length}.`,
+          variant: "destructive",
+        });
+      } else {
         toast({
           title: "Erreur",
           description: error instanceof Error ? error.message : "Erreur inconnue",
           variant: "destructive",
         });
-        setIsUploading(false);
-        setPhase("confirm");
       }
-    };
 
-    xhr.onerror = () => {
-      toast({
-        title: "Erreur",
-        description: "Erreur reseau lors de l'envoi",
-        variant: "destructive",
-      });
       setIsUploading(false);
       setPhase("confirm");
-    };
-
-    xhr.open("POST", "/api/photos/batch-upload");
-    xhr.send(formData);
+    }
   }, [id, selectedFiles, credits, isUploading, processingMode, toast]);
 
   if (status === "loading" || isLoading) {

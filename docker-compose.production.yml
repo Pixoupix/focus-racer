@@ -1,0 +1,110 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database
+  postgres:
+    image: postgres:15-alpine
+    container_name: focusracer-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: focusracer
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - focusracer-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Next.js application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: focusracer-app
+    restart: unless-stopped
+    environment:
+      # Database
+      DATABASE_URL: postgresql://postgres:${DB_PASSWORD}@postgres:5432/focusracer?schema=public
+
+      # NextAuth
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      NEXTAUTH_URL: https://focusracer.swipego.app
+
+      # Upload
+      UPLOAD_DIR: ./public/uploads
+
+      # Stripe
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
+      PLATFORM_FEE_PERCENT: ${PLATFORM_FEE_PERCENT:-10}
+      NEXT_PUBLIC_APP_URL: https://focusracer.swipego.app
+
+      # Email
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      EMAIL_FROM: ${EMAIL_FROM}
+
+      # AWS (Rekognition + S3)
+      AWS_REGION: ${AWS_REGION}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REKOGNITION_COLLECTION_ID: ${AWS_REKOGNITION_COLLECTION_ID}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET}
+      AWS_CLOUDFRONT_URL: ${AWS_CLOUDFRONT_URL:-}
+
+      # AI Config (optimized for 8-core server)
+      AI_OCR_CONFIDENCE_THRESHOLD: ${AI_OCR_CONFIDENCE_THRESHOLD:-70}
+      AI_QUALITY_THRESHOLD: ${AI_QUALITY_THRESHOLD:-30}
+      AI_AUTO_EDIT_ENABLED: ${AI_AUTO_EDIT_ENABLED:-true}
+      AI_FACE_INDEX_ENABLED: ${AI_FACE_INDEX_ENABLED:-true}
+      AI_LABEL_DETECTION_ENABLED: ${AI_LABEL_DETECTION_ENABLED:-true}
+      AI_MAX_CONCURRENT: ${AI_MAX_CONCURRENT:-8}
+
+      # Node.js (optimized for 64GB RAM)
+      NODE_OPTIONS: --max-old-space-size=8192
+      NODE_ENV: production
+    volumes:
+      - ./public/uploads:/app/public/uploads
+    networks:
+      - focusracer-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose:
+      - "3000"
+
+  # Caddy reverse proxy with automatic SSL
+  caddy:
+    image: caddy:2-alpine
+    container_name: focusracer-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"  # HTTP/3
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - focusracer-network
+    depends_on:
+      - app
+
+volumes:
+  postgres_data:
+    driver: local
+  caddy_data:
+    driver: local
+  caddy_config:
+    driver: local
+
+networks:
+  focusracer-network:
+    driver: bridge

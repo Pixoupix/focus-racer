@@ -9,7 +9,7 @@ export async function GET(
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user || (session.user as any).role !== "ADMIN") {
-    return NextResponse.json({ error: "Non autorise" }, { status: 403 });
+    return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
   }
 
   const event = await prisma.event.findUnique({
@@ -26,7 +26,7 @@ export async function GET(
   });
 
   if (!event) {
-    return NextResponse.json({ error: "Evenement introuvable" }, { status: 404 });
+    return NextResponse.json({ error: "Événement introuvable" }, { status: 404 });
   }
 
   // Get revenue data
@@ -72,7 +72,7 @@ export async function PATCH(
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user || (session.user as any).role !== "ADMIN") {
-    return NextResponse.json({ error: "Non autorise" }, { status: 403 });
+    return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
   }
 
   const body = await request.json();
@@ -96,7 +96,7 @@ export async function DELETE(
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user || (session.user as any).role !== "ADMIN") {
-    return NextResponse.json({ error: "Non autorise" }, { status: 403 });
+    return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
   }
 
   // Check if event has paid orders
@@ -106,7 +106,7 @@ export async function DELETE(
 
   if (paidOrders > 0) {
     return NextResponse.json({
-      error: `Impossible de supprimer : ${paidOrders} commande(s) payee(s) liee(s) a cet evenement`,
+      error: `Impossible de supprimer : ${paidOrders} commande(s) payée(s) liée(s) à cet événement`,
     }, { status: 400 });
   }
 

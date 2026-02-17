@@ -45,8 +45,8 @@ interface GdprRequest {
 const GDPR_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   PENDING: { label: "En attente", className: "bg-amber-100 text-amber-800 border-amber-200" },
   PROCESSING: { label: "En traitement", className: "bg-blue-100 text-blue-800 border-blue-200" },
-  COMPLETED: { label: "Terminee", className: "bg-emerald-100 text-emerald-800 border-emerald-200" },
-  REJECTED: { label: "Refusee", className: "bg-red-100 text-red-800 border-red-200" },
+  COMPLETED: { label: "Terminée", className: "bg-emerald-100 text-emerald-800 border-emerald-200" },
+  REJECTED: { label: "Refusée", className: "bg-red-100 text-red-800 border-red-200" },
 };
 
 export default function GdprSelfServicePage() {
@@ -115,7 +115,7 @@ export default function GdprSelfServicePage() {
     if (!bibNumber.trim() || !eventId) {
       toast({
         title: "Champs requis",
-        description: "Veuillez remplir le numero de dossard et selectionner un evenement.",
+        description: "Veuillez remplir le numéro de dossard et sélectionner un événement.",
         variant: "destructive",
       });
       return;
@@ -124,7 +124,7 @@ export default function GdprSelfServicePage() {
     if (!confirmed) {
       toast({
         title: "Confirmation requise",
-        description: "Veuillez confirmer que le dossard est bien lie a votre identite.",
+        description: "Veuillez confirmer que le dossard est bien lié à votre identité.",
         variant: "destructive",
       });
       return;
@@ -146,8 +146,8 @@ export default function GdprSelfServicePage() {
 
       if (res.ok) {
         toast({
-          title: "Demande enregistree",
-          description: "Votre demande RGPD a ete soumise. Elle sera traitee dans un delai de 30 jours.",
+          title: "Demande enregistrée",
+          description: "Votre demande RGPD a été soumise. Elle sera traitée dans un délai de 30 jours.",
         });
         setBibNumber("");
         setEventId("");
@@ -195,9 +195,9 @@ export default function GdprSelfServicePage() {
         <div className="container mx-auto px-4 py-8 max-w-4xl">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-2xl font-bold text-navy">Mes donnees personnelles (RGPD)</h1>
+            <h1 className="text-2xl font-bold text-navy">Mes données personnelles (RGPD)</h1>
             <p className="text-muted-foreground mt-1">
-              Gerez vos donnees personnelles et exercez vos droits
+              Gérez vos données personnelles et exercez vos droits
             </p>
           </div>
 
@@ -214,27 +214,27 @@ export default function GdprSelfServicePage() {
             <CardContent>
               <div className="space-y-3 text-sm text-gray-600">
                 <p>
-                  Conformement au Reglement General sur la Protection des Donnees (RGPD),
-                  vous disposez des droits suivants sur vos donnees personnelles :
+                  Conformément au Règlement Général sur la Protection des Données (RGPD),
+                  vous disposez des droits suivants sur vos données personnelles :
                 </p>
                 <ul className="list-disc list-inside space-y-1 ml-2">
                   <li>
-                    <strong>Droit d&apos;acces</strong> : obtenir une copie de vos donnees personnelles
+                    <strong>Droit d&apos;accès</strong> : obtenir une copie de vos données personnelles
                   </li>
                   <li>
-                    <strong>Droit de suppression</strong> : demander l&apos;effacement de vos photos et donnees biometriques (visage, dossard)
+                    <strong>Droit de suppression</strong> : demander l&apos;effacement de vos photos et données biométriques (visage, dossard)
                   </li>
                   <li>
                     <strong>Droit de rectification</strong> : corriger des informations inexactes
                   </li>
                   <li>
-                    <strong>Droit a la portabilite</strong> : recevoir vos donnees dans un format standard
+                    <strong>Droit à la portabilité</strong> : recevoir vos données dans un format standard
                   </li>
                 </ul>
                 <p className="text-gray-500 mt-3">
                   Pour exercer votre droit de suppression, remplissez le formulaire ci-dessous.
-                  Votre identite sera verifiee a partir de votre numero de dossard et de votre nom.
-                  La demande sera traitee dans un delai maximum de 30 jours.
+                  Votre identité sera vérifiée à partir de votre numéro de dossard et de votre nom.
+                  La demande sera traitée dans un délai maximum de 30 jours.
                 </p>
               </div>
             </CardContent>
@@ -255,15 +255,15 @@ export default function GdprSelfServicePage() {
                     <span className="font-medium text-amber-800">Demande en cours</span>
                   </div>
                   <p className="text-sm text-amber-700">
-                    Vous avez deja une demande de suppression en cours de traitement.
-                    Vous pourrez en soumettre une nouvelle une fois celle-ci terminee.
+                    Vous avez déjà une demande de suppression en cours de traitement.
+                    Vous pourrez en soumettre une nouvelle une fois celle-ci terminée.
                   </p>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="bibNumber" className="text-gray-700">Numero de dossard</Label>
+                      <Label htmlFor="bibNumber" className="text-gray-700">Numéro de dossard</Label>
                       <Input
                         id="bibNumber"
                         value={bibNumber}
@@ -274,13 +274,13 @@ export default function GdprSelfServicePage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="event" className="text-gray-700">Evenement</Label>
+                      <Label htmlFor="event" className="text-gray-700">Événement</Label>
                       {isLoadingEvents ? (
                         <div className="h-9 bg-gray-100 rounded-lg animate-pulse" />
                       ) : (
                         <Select value={eventId} onValueChange={setEventId}>
                           <SelectTrigger className="bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald/20 focus:border-emerald">
-                            <SelectValue placeholder="Selectionnez un evenement" />
+                            <SelectValue placeholder="Sélectionnez un événement" />
                           </SelectTrigger>
                           <SelectContent>
                             {events.map((evt) => (
@@ -302,7 +302,7 @@ export default function GdprSelfServicePage() {
                       id="reason"
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
-                      placeholder="Precisions complementaires sur votre demande..."
+                      placeholder="Précisions complémentaires sur votre demande..."
                       rows={3}
                       className="flex w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald/20 focus:border-emerald disabled:cursor-not-allowed disabled:opacity-50 resize-y"
                     />
@@ -319,10 +319,10 @@ export default function GdprSelfServicePage() {
                       />
                       <span className="text-sm text-gray-700">
                         Je confirme que le dossard{" "}
-                        <strong>{bibNumber || "___"}</strong> est bien lie a mon nom{" "}
+                        <strong>{bibNumber || "___"}</strong> est bien lié à mon nom{" "}
                         <strong>{session?.user?.name || "___"}</strong>.
-                        Je comprends que cette demande entrainera la suppression definitive
-                        de mes photos et donnees biometriques associees a cet evenement.
+                        Je comprends que cette demande entraînera la suppression définitive
+                        de mes photos et données biométriques associées à cet événement.
                       </span>
                     </label>
                   </div>
@@ -396,7 +396,7 @@ export default function GdprSelfServicePage() {
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium text-gray-900">
-                              Demande de {req.type === "DELETION" ? "suppression" : req.type === "ACCESS" ? "acces" : "rectification"}
+                              Demande de {req.type === "DELETION" ? "suppression" : req.type === "ACCESS" ? "accès" : "rectification"}
                             </span>
                             <Badge className={`text-xs ${statusCfg.className}`}>
                               {statusCfg.label}
@@ -426,12 +426,12 @@ export default function GdprSelfServicePage() {
                           )}
                           {req.status === "COMPLETED" && (
                             <p className="text-xs text-emerald-600 mt-1">
-                              {req.photosDeleted} photo(s) supprimee(s), {req.facesDeleted} donnee(s) biometrique(s) effacee(s)
+                              {req.photosDeleted} photo(s) supprimée(s), {req.facesDeleted} donnée(s) biométrique(s) effacée(s)
                             </p>
                           )}
                           {req.processedAt && (
                             <p className="text-xs text-gray-400">
-                              Traitee le {new Date(req.processedAt).toLocaleDateString("fr-FR", {
+                              Traitée le {new Date(req.processedAt).toLocaleDateString("fr-FR", {
                                 day: "numeric",
                                 month: "long",
                                 year: "numeric",

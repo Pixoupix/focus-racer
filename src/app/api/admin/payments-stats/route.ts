@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Error fetching payment stats:", error);
     return NextResponse.json(
-      { error: "Erreur lors de la recuperation des statistiques" },
+      { error: "Erreur lors de la récupération des statistiques" },
       { status: 500 }
     );
   }

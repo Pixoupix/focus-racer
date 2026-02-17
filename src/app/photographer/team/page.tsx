@@ -101,7 +101,7 @@ export default function TeamPage() {
         const data = await res.json();
         toast({
           title: "Erreur",
-          description: data.error || "Impossible de charger l'equipe",
+          description: data.error || "Impossible de charger l'équipe",
           variant: "destructive",
         });
       }
@@ -144,7 +144,7 @@ export default function TeamPage() {
       if (res.ok) {
         setInviteResult(data);
         toast({
-          title: "Photographe trouve",
+          title: "Photographe trouvé",
           description: data.message,
         });
         setInviteEmail("");
@@ -173,8 +173,8 @@ export default function TeamPage() {
       setTeam((prev) => prev.filter((m) => m.id !== id));
       setRemovingId(null);
       toast({
-        title: "Photographe retire",
-        description: "Le photographe a ete retire de votre equipe.",
+        title: "Photographe retiré",
+        description: "Le photographe a été retiré de votre équipe.",
       });
     } else {
       setRemovingId(id);
@@ -195,10 +195,10 @@ export default function TeamPage() {
       <div className="p-8 animate-fade-in">
         <div className="mb-8">
           <h1 className="text-2xl font-bold font-display text-gray-900">
-            Mon equipe
+            Mon équipe
           </h1>
           <p className="text-gray-500 mt-1">
-            Gerez les photographes de votre agence
+            Gérez les photographes de votre agence
           </p>
         </div>
         <Card className="glass-card rounded-2xl border-0 shadow-card">
@@ -219,11 +219,11 @@ export default function TeamPage() {
               </svg>
             </div>
             <p className="text-gray-700 font-medium mb-2">
-              Acces reserve aux agences
+              Accès réservé aux agences
             </p>
             <p className="text-sm text-gray-500">
-              Cette page est reservee aux comptes de type Agence pour la gestion
-              de leur equipe de photographes.
+              Cette page est réservée aux comptes de type Agence pour la gestion
+              de leur équipe de photographes.
             </p>
           </CardContent>
         </Card>
@@ -237,10 +237,10 @@ export default function TeamPage() {
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold font-display text-gray-900">
-            Mon equipe
+            Mon équipe
           </h1>
           <p className="text-gray-500 mt-1">
-            Gerez les photographes de votre agence
+            Gérez les photographes de votre agence
           </p>
         </div>
         <Button
@@ -342,7 +342,7 @@ export default function TeamPage() {
                 <p className="text-2xl font-bold text-gray-900">
                   {team.reduce((acc, m) => acc + (m._count?.events || 0), 0)}
                 </p>
-                <p className="text-sm text-gray-500">Evenements total</p>
+                <p className="text-sm text-gray-500">Événements total</p>
               </div>
             </div>
           </CardContent>
@@ -368,7 +368,7 @@ export default function TeamPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">{totalListings}</p>
-                <p className="text-sm text-gray-500">Mission{totalListings !== 1 ? "s" : ""} publiee{totalListings !== 1 ? "s" : ""}</p>
+                <p className="text-sm text-gray-500">Mission{totalListings !== 1 ? "s" : ""} publiée{totalListings !== 1 ? "s" : ""}</p>
               </div>
             </div>
           </CardContent>
@@ -472,7 +472,7 @@ export default function TeamPage() {
 
               <p className="text-xs text-gray-400">
                 Recherchez un photographe inscrit sur Focus Racer par son email.
-                Pour l&apos;ajouter a votre equipe, creez une mission sur la Marketplace
+                Pour l&apos;ajouter à votre équipe, créez une mission sur la Marketplace
                 et acceptez sa candidature.
               </p>
             </form>
@@ -484,7 +484,7 @@ export default function TeamPage() {
       {!isLoading && team.length > 0 && (
         <div className="mb-6">
           <Input
-            placeholder="Rechercher dans l'equipe..."
+            placeholder="Rechercher dans l'équipe..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="bg-white max-w-md border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald/20 focus:border-emerald"
@@ -522,13 +522,13 @@ export default function TeamPage() {
             </div>
             <p className="text-gray-700 font-medium mb-2">
               {team.length === 0
-                ? "Aucun photographe dans votre equipe"
-                : "Aucun resultat"}
+                ? "Aucun photographe dans votre équipe"
+                : "Aucun résultat"}
             </p>
             <p className="text-sm text-gray-500 mb-6">
               {team.length === 0
                 ? "Publiez une mission sur la Marketplace pour recruter des photographes."
-                : "Aucun photographe ne correspond a votre recherche."}
+                : "Aucun photographe ne correspond à votre recherche."}
             </p>
             {team.length === 0 && (
               <Button
@@ -669,7 +669,7 @@ export default function TeamPage() {
                         />
                       </svg>
                       <span>
-                        {member._count?.events || 0} evenement{(member._count?.events || 0) !== 1 ? "s" : ""}
+                        {member._count?.events || 0} événement{(member._count?.events || 0) !== 1 ? "s" : ""}
                       </span>
                     </div>
 

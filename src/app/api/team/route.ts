@@ -6,7 +6,7 @@ import prisma from "@/lib/prisma";
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Non autorise" }, { status: 401 });
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
   const user = await prisma.user.findUnique({
@@ -16,7 +16,7 @@ export async function GET() {
 
   if (!user || !["AGENCY", "FEDERATION"].includes(user.role)) {
     return NextResponse.json(
-      { error: "Acces reserve aux agences et federations" },
+      { error: "Accès réservé aux agences et fédérations" },
       { status: 403 }
     );
   }
@@ -96,7 +96,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Non autorise" }, { status: 401 });
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
   const user = await prisma.user.findUnique({
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
 
   if (!user || !["AGENCY", "FEDERATION"].includes(user.role)) {
     return NextResponse.json(
-      { error: "Acces reserve aux agences et federations" },
+      { error: "Accès réservé aux agences et fédérations" },
       { status: 403 }
     );
   }
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
 
   if (!targetUser) {
     return NextResponse.json(
-      { error: "Aucun utilisateur trouve avec cet email" },
+      { error: "Aucun utilisateur trouvé avec cet email" },
       { status: 404 }
     );
   }
@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     success: true,
-    message: `${targetUser.name} a ete trouve. Utilisez la marketplace pour creer une mission.`,
+    message: `${targetUser.name} a été trouvé. Utilisez la marketplace pour créer une mission.`,
     user: { id: targetUser.id, name: targetUser.name, role: targetUser.role },
   });
 }

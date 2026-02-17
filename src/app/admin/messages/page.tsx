@@ -78,7 +78,7 @@ const CATEGORY_LABELS: Record<MessageCategory, string> = {
   GDPR: "RGPD",
   ACCOUNT: "Compte",
   TECHNICAL: "Technique",
-  EVENT: "Evenement",
+  EVENT: "Événement",
   OTHER: "Autre",
 };
 
@@ -95,8 +95,8 @@ const CATEGORY_COLORS: Record<MessageCategory, string> = {
 const STATUS_LABELS: Record<MessageStatus, string> = {
   OPEN: "Ouvert",
   IN_PROGRESS: "En cours",
-  RESOLVED: "Resolu",
-  CLOSED: "Ferme",
+  RESOLVED: "Résolu",
+  CLOSED: "Fermé",
 };
 
 const STATUS_COLORS: Record<MessageStatus, string> = {
@@ -213,7 +213,7 @@ export default function AdminMessagesPage() {
     if (!replyText.trim() && !replyStatus) {
       toast({
         title: "Champs requis",
-        description: "Veuillez saisir une reponse ou changer le statut",
+        description: "Veuillez saisir une réponse ou changer le statut",
         variant: "destructive",
       });
       return;
@@ -233,12 +233,12 @@ export default function AdminMessagesPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || "Erreur lors de la mise a jour");
+        throw new Error(data.error || "Erreur lors de la mise à jour");
       }
 
       toast({
-        title: "Message mis a jour",
-        description: "La reponse a ete envoyee avec succes",
+        title: "Message mis à jour",
+        description: "La réponse a été envoyée avec succès",
       });
 
       setExpandedId(null);
@@ -252,7 +252,7 @@ export default function AdminMessagesPage() {
         description:
           error instanceof Error
             ? error.message
-            : "Impossible de mettre a jour le message",
+            : "Impossible de mettre à jour le message",
         variant: "destructive",
       });
     } finally {
@@ -312,7 +312,7 @@ export default function AdminMessagesPage() {
           )}
         </div>
         <p className="text-muted-foreground mt-1">
-          Gerez les messages et demandes des utilisateurs
+          Gérez les messages et demandes des utilisateurs
         </p>
       </div>
 
@@ -328,12 +328,12 @@ export default function AdminMessagesPage() {
             },
             {
               key: "RESOLVED" as MessageStatus,
-              label: "Resolus",
+              label: "Résolus",
               color: "emerald",
             },
             {
               key: "CLOSED" as MessageStatus,
-              label: "Fermes",
+              label: "Fermés",
               color: "gray",
             },
           ] as const
@@ -381,10 +381,10 @@ export default function AdminMessagesPage() {
         />
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
           <SelectTrigger className="w-full md:w-48">
-            <SelectValue placeholder="Categorie" />
+            <SelectValue placeholder="Catégorie" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Toutes les categories</SelectItem>
+            <SelectItem value="all">Toutes les catégories</SelectItem>
             {(Object.keys(CATEGORY_LABELS) as MessageCategory[]).map((cat) => (
               <SelectItem key={cat} value={cat}>
                 {CATEGORY_LABELS[cat]}
@@ -418,12 +418,12 @@ export default function AdminMessagesPage() {
         <Card className="glass-card rounded-2xl">
           <CardContent className="py-16 text-center">
             <p className="text-muted-foreground text-lg mb-1">
-              Aucun message trouve
+              Aucun message trouvé
             </p>
             <p className="text-sm text-muted-foreground">
               {debouncedSearch || categoryFilter !== "all" || statusFilter !== "all"
                 ? "Essayez de modifier vos filtres"
-                : "Les messages des utilisateurs apparaitront ici"}
+                : "Les messages des utilisateurs apparaîtront ici"}
             </p>
           </CardContent>
         </Card>
@@ -495,7 +495,7 @@ export default function AdminMessagesPage() {
                             variant="outline"
                             className="text-xs border-emerald/30 text-emerald"
                           >
-                            Repondu
+                            Répondu
                           </Badge>
                         )}
                       </div>
@@ -515,9 +515,9 @@ export default function AdminMessagesPage() {
                         {msg.message}
                       </div>
                       <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                        <span>Envoye le {formatDate(msg.createdAt)}</span>
+                        <span>Envoyé le {formatDate(msg.createdAt)}</span>
                         {msg.eventId && (
-                          <span>Evenement : {msg.eventId}</span>
+                          <span>Événement : {msg.eventId}</span>
                         )}
                         {msg.orderId && (
                           <span>Commande : {msg.orderId}</span>
@@ -529,13 +529,13 @@ export default function AdminMessagesPage() {
                     {msg.adminReply && msg.repliedAt && (
                       <div className="mb-6">
                         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
-                          Reponse precedente
+                          Réponse précédente
                         </p>
                         <div className="bg-emerald-50 rounded-xl p-4 text-sm text-navy leading-relaxed whitespace-pre-wrap border border-emerald-100">
                           {msg.adminReply}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Repondu le {formatDate(msg.repliedAt)}
+                          Répondu le {formatDate(msg.repliedAt)}
                           {msg.repliedBy && ` par ${msg.repliedBy}`}
                         </p>
                       </div>
@@ -544,13 +544,13 @@ export default function AdminMessagesPage() {
                     {/* Reply form */}
                     <div className="bg-white/40 rounded-xl p-4 border border-gray-100">
                       <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
-                        {msg.adminReply ? "Modifier la reponse" : "Repondre"}
+                        {msg.adminReply ? "Modifier la réponse" : "Répondre"}
                       </p>
 
                       <textarea
                         value={replyText}
                         onChange={(e) => setReplyText(e.target.value)}
-                        placeholder="Saisissez votre reponse..."
+                        placeholder="Saisissez votre réponse..."
                         rows={4}
                         className="w-full rounded-lg border border-input bg-white px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring resize-y min-h-[100px]"
                       />
@@ -571,11 +571,11 @@ export default function AdminMessagesPage() {
                             }
                           >
                             <SelectTrigger className="w-44">
-                              <SelectValue placeholder="Statut inchange" />
+                              <SelectValue placeholder="Statut inchangé" />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="__none__">
-                                Statut inchange
+                                Statut inchangé
                               </SelectItem>
                               {(
                                 Object.keys(STATUS_LABELS) as MessageStatus[]
@@ -634,7 +634,7 @@ export default function AdminMessagesPage() {
               disabled={pagination.page <= 1}
               onClick={() => fetchMessages(pagination.page - 1)}
             >
-              Precedent
+              Précédent
             </Button>
             <span className="text-sm text-muted-foreground px-2">
               Page {pagination.page} / {pagination.totalPages}

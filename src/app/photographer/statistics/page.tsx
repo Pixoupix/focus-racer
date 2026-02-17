@@ -84,7 +84,7 @@ interface StatsData {
 // ---------------------------------------------------------------------------
 
 const SPORT_LABELS: Record<string, string> = {
-  RUNNING: "Course a pied",
+  RUNNING: "Course à pied",
   TRAIL: "Trail",
   TRIATHLON: "Triathlon",
   CYCLING: "Cyclisme",
@@ -104,20 +104,20 @@ const SPORT_COLORS: Record<string, string> = {
 };
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
-  PUBLISHED: { label: "Publie", className: "bg-emerald-100 text-emerald-700" },
+  PUBLISHED: { label: "Publié", className: "bg-emerald-100 text-emerald-700" },
   DRAFT: { label: "Brouillon", className: "bg-gray-100 text-gray-600" },
-  ARCHIVED: { label: "Archive", className: "bg-teal-100 text-teal-700" },
+  ARCHIVED: { label: "Archivé", className: "bg-teal-100 text-teal-700" },
 };
 
 const MONTH_LABELS: Record<string, string> = {
   "01": "Jan",
-  "02": "Fev",
+  "02": "Fév",
   "03": "Mar",
   "04": "Avr",
   "05": "Mai",
   "06": "Jun",
   "07": "Jul",
-  "08": "Aou",
+  "08": "Aoû",
   "09": "Sep",
   "10": "Oct",
   "11": "Nov",
@@ -231,7 +231,7 @@ function RevenueChart({ data }: { data: MonthlyRevenue[] }) {
   if (data.length === 0) {
     return (
       <div className="flex items-center justify-center h-48 text-gray-400 text-sm">
-        Aucune donnee de revenus
+        Aucune donnée de revenus
       </div>
     );
   }
@@ -344,7 +344,7 @@ export default function StatisticsPage() {
         <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
       </svg>
     )},
-    { id: "events" as const, label: "Evenements", icon: (
+    { id: "events" as const, label: "Événements", icon: (
       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
       </svg>
@@ -360,7 +360,7 @@ export default function StatisticsPage() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold font-display text-gray-900">Statistiques</h1>
-        <p className="text-gray-500 mt-1">Analysez les performances de vos evenements et de votre activite</p>
+        <p className="text-gray-500 mt-1">Analysez les performances de vos événements et de votre activité</p>
       </div>
 
       {/* Tabs */}
@@ -396,9 +396,9 @@ export default function StatisticsPage() {
             ) : (
               <>
                 <KPICard
-                  label="Evenements"
+                  label="Événements"
                   value={overview?.totalEvents || 0}
-                  subtitle={`${overview?.publishedEvents || 0} publies`}
+                  subtitle={`${overview?.publishedEvents || 0} publiés`}
                   iconBg="bg-teal-50"
                   iconColor="text-teal-600"
                   icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>}
@@ -406,21 +406,21 @@ export default function StatisticsPage() {
                 <KPICard
                   label="Photos"
                   value={overview?.totalPhotos || 0}
-                  subtitle={`${overview?.processedPhotos || 0} traitees`}
+                  subtitle={`${overview?.processedPhotos || 0} traitées`}
                   iconBg="bg-emerald-50"
                   iconColor="text-emerald-600"
                   icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>}
                 />
                 <KPICard
-                  label="Qualite moyenne"
+                  label="Qualité moyenne"
                   value={`${(overview?.avgQuality || 0).toFixed(0)}%`}
-                  subtitle={`${overview?.blurryPhotos || 0} floues detectees`}
+                  subtitle={`${overview?.blurryPhotos || 0} floues détectées`}
                   iconBg="bg-blue-50"
                   iconColor="text-blue-600"
                   icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>}
                 />
                 <KPICard
-                  label="Dossards detectes"
+                  label="Dossards détectés"
                   value={detection?.totalBibs || 0}
                   subtitle={`${detection?.uniqueBibs || 0} uniques`}
                   iconBg="bg-amber-50"
@@ -430,7 +430,7 @@ export default function StatisticsPage() {
                 <KPICard
                   label="Coureurs inscrits"
                   value={overview?.totalRunners || 0}
-                  subtitle={`~${avgRunnersPerEvent} par evenement`}
+                  subtitle={`~${avgRunnersPerEvent} par événement`}
                   iconBg="bg-purple-50"
                   iconColor="text-purple-600"
                   icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>}
@@ -481,15 +481,15 @@ export default function StatisticsPage() {
                   <div className="grid grid-cols-2 gap-6">
                     <div className="text-center p-4 rounded-xl bg-gray-50">
                       <p className="text-2xl font-bold font-display text-gray-900">{avgRunnersPerEvent}</p>
-                      <p className="text-sm text-gray-500 mt-1">Coureurs / evenement</p>
+                      <p className="text-sm text-gray-500 mt-1">Coureurs / événement</p>
                     </div>
                     <div className="text-center p-4 rounded-xl bg-gray-50">
                       <p className="text-2xl font-bold font-display text-gray-900">{avgPhotosPerEvent}</p>
-                      <p className="text-sm text-gray-500 mt-1">Photos / evenement</p>
+                      <p className="text-sm text-gray-500 mt-1">Photos / événement</p>
                     </div>
                     <div className="text-center p-4 rounded-xl bg-gray-50">
                       <p className="text-2xl font-bold font-display text-gray-900">{avgOrdersPerEvent}</p>
-                      <p className="text-sm text-gray-500 mt-1">Commandes / evenement</p>
+                      <p className="text-sm text-gray-500 mt-1">Commandes / événement</p>
                     </div>
                     <div className="text-center p-4 rounded-xl bg-gray-50">
                       <p className="text-2xl font-bold font-display text-emerald-600">{conversionRate}%</p>
@@ -503,7 +503,7 @@ export default function StatisticsPage() {
             {/* Credits */}
             <Card className="bg-white border-0 shadow-card rounded-2xl">
               <CardHeader>
-                <CardTitle className="text-lg font-display text-gray-900">Credits IA</CardTitle>
+                <CardTitle className="text-lg font-display text-gray-900">Crédits IA</CardTitle>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
@@ -516,7 +516,7 @@ export default function StatisticsPage() {
                     <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50">
                       <p className="text-sm text-gray-500">Solde actuel</p>
                       <p className="text-3xl font-bold font-display text-emerald-600">{stats?.credits.balance || 0}</p>
-                      <p className="text-xs text-gray-400 mt-1">credits</p>
+                      <p className="text-xs text-gray-400 mt-1">crédits</p>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">Transactions totales</span>
@@ -533,7 +533,7 @@ export default function StatisticsPage() {
                     {!overview?.stripeOnboarded && (
                       <div className="p-3 rounded-lg bg-amber-50 border border-amber-100">
                         <p className="text-xs text-amber-700">
-                          Stripe Connect non configure. Configurez-le pour recevoir vos paiements.
+                          Stripe Connect non configuré. Configurez-le pour recevoir vos paiements.
                         </p>
                       </div>
                     )}
@@ -613,7 +613,7 @@ export default function StatisticsPage() {
             {/* Top Events */}
             <Card className="bg-white border-0 shadow-card rounded-2xl">
               <CardHeader>
-                <CardTitle className="text-lg font-display text-gray-900">Top evenements</CardTitle>
+                <CardTitle className="text-lg font-display text-gray-900">Top événements</CardTitle>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
@@ -653,7 +653,7 @@ export default function StatisticsPage() {
           {/* Revenue breakdown */}
           <Card className="bg-white border-0 shadow-card rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-lg font-display text-gray-900">Repartition des revenus</CardTitle>
+              <CardTitle className="text-lg font-display text-gray-900">Répartition des revenus</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -711,7 +711,7 @@ export default function StatisticsPage() {
             ) : (
               <>
                 <KPICard
-                  label="Photos traitees"
+                  label="Photos traitées"
                   value={overview?.processedPhotos || 0}
                   subtitle={`sur ${overview?.totalPhotos || 0} total`}
                   iconBg="bg-emerald-50"
@@ -727,7 +727,7 @@ export default function StatisticsPage() {
                   icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>}
                 />
                 <KPICard
-                  label="Visages indexes"
+                  label="Visages indexés"
                   value={overview?.faceIndexedPhotos || 0}
                   subtitle="Reconnaissance faciale"
                   iconBg="bg-purple-50"
@@ -737,7 +737,7 @@ export default function StatisticsPage() {
                 <KPICard
                   label="Taux OCR"
                   value={`${detection?.ocrRate || "0"}%`}
-                  subtitle={`${detection?.totalBibs || 0} dossards detectes`}
+                  subtitle={`${detection?.totalBibs || 0} dossards détectés`}
                   iconBg="bg-amber-50"
                   iconColor="text-amber-600"
                   icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" /></svg>}
@@ -749,7 +749,7 @@ export default function StatisticsPage() {
           {/* Progress bars */}
           <Card className="bg-white border-0 shadow-card rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-lg font-display text-gray-900">Metriques de traitement</CardTitle>
+              <CardTitle className="text-lg font-display text-gray-900">Métriques de traitement</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -764,7 +764,7 @@ export default function StatisticsPage() {
               ) : (
                 <div className="space-y-6">
                   <ProgressBar
-                    label="Photos traitees"
+                    label="Photos traitées"
                     value={overview?.processedPhotos || 0}
                     max={overview?.totalPhotos || 1}
                     color="bg-emerald-500"
@@ -776,13 +776,13 @@ export default function StatisticsPage() {
                     color="bg-red-400"
                   />
                   <ProgressBar
-                    label="Visages indexes"
+                    label="Visages indexés"
                     value={overview?.faceIndexedPhotos || 0}
                     max={overview?.totalPhotos || 1}
                     color="bg-purple-500"
                   />
                   <ProgressBar
-                    label="Detection OCR"
+                    label="Détection OCR"
                     value={detection?.totalBibs || 0}
                     max={overview?.totalPhotos || 1}
                     color="bg-amber-500"
@@ -795,7 +795,7 @@ export default function StatisticsPage() {
           {/* AI Tips */}
           <Card className="bg-white border-0 shadow-card rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-lg font-display text-gray-900">Conseils pour ameliorer la detection</CardTitle>
+              <CardTitle className="text-lg font-display text-gray-900">Conseils pour améliorer la détection</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-start gap-3 p-4 rounded-xl bg-emerald-50">
@@ -804,7 +804,7 @@ export default function StatisticsPage() {
                 </svg>
                 <div>
                   <p className="font-medium text-gray-900 text-sm">Dossards bien visibles</p>
-                  <p className="text-xs text-gray-600 mt-1">Photographiez les coureurs de face ou de 3/4 pour maximiser la detection des dossards par l&apos;IA.</p>
+                  <p className="text-xs text-gray-600 mt-1">Photographiez les coureurs de face ou de 3/4 pour maximiser la détection des dossards par l&apos;IA.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-4 rounded-xl bg-blue-50">
@@ -813,8 +813,8 @@ export default function StatisticsPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
                 </svg>
                 <div>
-                  <p className="font-medium text-gray-900 text-sm">Bonne luminosite</p>
-                  <p className="text-xs text-gray-600 mt-1">Evitez les contre-jours et les zones trop sombres. L&apos;IA fonctionne mieux avec un eclairage uniforme.</p>
+                  <p className="font-medium text-gray-900 text-sm">Bonne luminosité</p>
+                  <p className="text-xs text-gray-600 mt-1">Évitez les contre-jours et les zones trop sombres. L&apos;IA fonctionne mieux avec un éclairage uniforme.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-4 rounded-xl bg-purple-50">
@@ -823,7 +823,7 @@ export default function StatisticsPage() {
                 </svg>
                 <div>
                   <p className="font-medium text-gray-900 text-sm">Mode Premium pour la reconnaissance faciale</p>
-                  <p className="text-xs text-gray-600 mt-1">Le mode Premium (2 credits/photo) permet la reconnaissance faciale pour lier automatiquement les photos orphelines.</p>
+                  <p className="text-xs text-gray-600 mt-1">Le mode Premium (2 crédits/photo) permet la reconnaissance faciale pour lier automatiquement les photos orphelines.</p>
                 </div>
               </div>
             </CardContent>
@@ -832,7 +832,7 @@ export default function StatisticsPage() {
       )}
 
       {/* ============================================================= */}
-      {/* TAB: Evenements */}
+      {/* TAB: Événements */}
       {/* ============================================================= */}
       {activeTab === "events" && (
         <div className="space-y-8">
@@ -852,7 +852,7 @@ export default function StatisticsPage() {
                       </svg>
                     </div>
                     <p className="text-3xl font-bold font-display text-gray-900">{overview?.publishedEvents || 0}</p>
-                    <p className="text-sm text-gray-500 mt-1">Publies</p>
+                    <p className="text-sm text-gray-500 mt-1">Publiés</p>
                   </CardContent>
                 </Card>
                 <Card className="bg-white border-0 shadow-card rounded-2xl">
@@ -874,7 +874,7 @@ export default function StatisticsPage() {
                       </svg>
                     </div>
                     <p className="text-3xl font-bold font-display text-gray-900">{archivedEvents}</p>
-                    <p className="text-sm text-gray-500 mt-1">Archives</p>
+                    <p className="text-sm text-gray-500 mt-1">Archivés</p>
                   </CardContent>
                 </Card>
               </>
@@ -884,7 +884,7 @@ export default function StatisticsPage() {
           {/* Sport Type Breakdown */}
           <Card className="bg-white border-0 shadow-card rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-lg font-display text-gray-900">Repartition par sport</CardTitle>
+              <CardTitle className="text-lg font-display text-gray-900">Répartition par sport</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -903,7 +903,7 @@ export default function StatisticsPage() {
                         <div key={item.sportType}>
                           <div className="flex justify-between text-sm mb-1">
                             <span className="text-gray-700 font-medium">{SPORT_LABELS[item.sportType] || item.sportType}</span>
-                            <span className="text-gray-500">{item._count} evenement{item._count > 1 ? "s" : ""} ({pct.toFixed(0)}%)</span>
+                            <span className="text-gray-500">{item._count} événement{item._count > 1 ? "s" : ""} ({pct.toFixed(0)}%)</span>
                           </div>
                           <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
                             <div
@@ -916,7 +916,7 @@ export default function StatisticsPage() {
                     })}
                 </div>
               ) : (
-                <p className="text-gray-400 text-sm text-center py-4">Aucun evenement</p>
+                <p className="text-gray-400 text-sm text-center py-4">Aucun événement</p>
               )}
             </CardContent>
           </Card>
@@ -924,7 +924,7 @@ export default function StatisticsPage() {
           {/* Events List */}
           <Card className="bg-white border-0 shadow-card rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg font-display text-gray-900">Vos evenements</CardTitle>
+              <CardTitle className="text-lg font-display text-gray-900">Vos événements</CardTitle>
               <Badge className="bg-gray-100 text-gray-600">{events.length} total</Badge>
             </CardHeader>
             <CardContent>
@@ -968,7 +968,7 @@ export default function StatisticsPage() {
                   })}
                 </div>
               ) : (
-                <p className="text-gray-400 text-sm text-center py-8">Aucun evenement</p>
+                <p className="text-gray-400 text-sm text-center py-8">Aucun événement</p>
               )}
             </CardContent>
           </Card>

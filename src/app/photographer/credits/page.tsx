@@ -30,7 +30,7 @@ const SUBSCRIPTIONS = [
 
 const TYPE_LABELS: Record<string, { label: string; color: string }> = {
   PURCHASE: { label: "Achat", color: "bg-teal-100 text-teal-700" },
-  DEDUCTION: { label: "Deduction", color: "bg-amber-100 text-amber-700" },
+  DEDUCTION: { label: "Déduction", color: "bg-amber-100 text-amber-700" },
   REFUND: { label: "Remboursement", color: "bg-green-100 text-green-700" },
   ADMIN_GRANT: { label: "Admin", color: "bg-purple-100 text-purple-700" },
 };
@@ -100,7 +100,7 @@ export default function CreditsPage() {
     } catch {
       toast({
         title: "Erreur",
-        description: "Impossible d'ajouter les credits.",
+        description: "Impossible d'ajouter les crédits.",
         variant: "destructive",
       });
     } finally {
@@ -116,18 +116,18 @@ export default function CreditsPage() {
   return (
     <div className="p-8 animate-fade-in">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold font-display text-gray-900">Credits & Facturation</h1>
-        <p className="text-gray-500 mt-1">Gerez vos credits pour importer des photos</p>
+        <h1 className="text-2xl font-bold font-display text-gray-900">Crédits & Facturation</h1>
+        <p className="text-gray-500 mt-1">Gérez vos crédits pour importer des photos</p>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          {/* Packs credits */}
+          {/* Packs crédits */}
           <Card className="bg-white border-0 shadow-card rounded-xl">
             <CardHeader>
-              <CardTitle className="text-lg font-display text-gray-900">Packs credits</CardTitle>
+              <CardTitle className="text-lg font-display text-gray-900">Packs crédits</CardTitle>
               <CardDescription className="text-gray-500">
-                1 credit = 1 photo importee. Credits rembourses si aucun dossard detecte.
+                1 crédit = 1 photo importée. Crédits remboursés si aucun dossard détecté.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -163,7 +163,7 @@ export default function CreditsPage() {
             <CardHeader>
               <CardTitle className="text-lg font-display text-gray-900">Abonnements annuels</CardTitle>
               <CardDescription className="text-gray-500">
-                Credits recharges automatiquement chaque mois. Ideal pour les photographes reguliers.
+                Crédits rechargés automatiquement chaque mois. Ideal pour les photographes réguliers.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -175,13 +175,13 @@ export default function CreditsPage() {
                     onClick={() => {
                       toast({
                         title: "Abonnement",
-                        description: "Le paiement par abonnement sera bientot disponible via Stripe.",
+                        description: "Le paiement par abonnement sera bientôt disponible via Stripe.",
                       });
                     }}
                   >
                     <div className="flex flex-col items-center text-center gap-2">
                       <span className="text-2xl font-bold text-gray-900">{sub.credits.toLocaleString("fr-FR")}</span>
-                      <span className="text-xs text-gray-500">credits / mois</span>
+                      <span className="text-xs text-gray-500">crédits / mois</span>
                       <div className="mt-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-sm font-semibold">
                         {sub.price}
                       </div>
@@ -308,7 +308,7 @@ export default function CreditsPage() {
                         disabled={page <= 1}
                         className="rounded-lg"
                       >
-                        Precedent
+                        Précédent
                       </Button>
                       <span className="flex items-center text-sm text-gray-500 px-3">
                         {page} / {totalPages}
@@ -339,10 +339,10 @@ export default function CreditsPage() {
               <p className="text-4xl font-bold font-display mt-2">
                 {credits.toLocaleString("fr-FR")}
               </p>
-              <p className="text-emerald-200 text-sm mt-1">credits</p>
+              <p className="text-emerald-200 text-sm mt-1">crédits</p>
               {isTestMode && (
                 <Badge className="mt-3 bg-white/20 text-white border-0 text-xs">
-                  Mode test - Credits illimites
+                  Mode test - Crédits illimités
                 </Badge>
               )}
             </CardContent>
@@ -351,16 +351,16 @@ export default function CreditsPage() {
           {/* Info */}
           <Card className="bg-white border-0 shadow-card rounded-xl">
             <CardHeader>
-              <CardTitle className="text-lg font-display text-gray-900">Comment ca marche ?</CardTitle>
+              <CardTitle className="text-lg font-display text-gray-900">Comment ça marche ?</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm text-gray-600">
               <div className="flex gap-3">
                 <span className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold">1</span>
-                <p>Rechargez votre compte en credits</p>
+                <p>Rechargez votre compte en crédits</p>
               </div>
               <div className="flex gap-3">
                 <span className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold">2</span>
-                <p>Importez vos photos (1 photo = 1 credit)</p>
+                <p>Importez vos photos (1 photo = 1 crédit)</p>
               </div>
               <div className="flex gap-3">
                 <span className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold">3</span>
@@ -368,7 +368,7 @@ export default function CreditsPage() {
               </div>
               <div className="flex gap-3">
                 <span className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold">↩</span>
-                <p>Credits rembourses si aucun dossard detecte</p>
+                <p>Crédits remboursés si aucun dossard détecté</p>
               </div>
             </CardContent>
           </Card>
@@ -386,7 +386,7 @@ export default function CreditsPage() {
                 <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
                 </svg>
-                <span className="text-gray-700">FAQ Credits</span>
+                <span className="text-gray-700">FAQ Crédits</span>
               </a>
               <a
                 href="/photographer/support"

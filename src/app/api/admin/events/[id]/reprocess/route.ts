@@ -9,7 +9,7 @@ export async function POST(
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user || (session.user as any).role !== "ADMIN") {
-    return NextResponse.json({ error: "Non autorise" }, { status: 403 });
+    return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
   }
 
   const event = await prisma.event.findUnique({
@@ -18,7 +18,7 @@ export async function POST(
   });
 
   if (!event) {
-    return NextResponse.json({ error: "Evenement introuvable" }, { status: 404 });
+    return NextResponse.json({ error: "Événement introuvable" }, { status: 404 });
   }
 
   // Reset processing status for all photos in this event
@@ -29,7 +29,7 @@ export async function POST(
 
   return NextResponse.json({
     success: true,
-    message: `Retraitement lance pour ${event._count.photos} photos de "${event.name}"`,
+    message: `Retraitement lancé pour ${event._count.photos} photos de "${event.name}"`,
     photosToReprocess: event._count.photos,
   });
 }

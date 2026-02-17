@@ -7,7 +7,7 @@ import prisma from "@/lib/prisma";
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Non autorise" }, { status: 401 });
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
   const { searchParams } = new URL(request.url);
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Non autorise" }, { status: 401 });
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
   const body = await request.json();
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 
   const validCategories = ["BILLING", "SORTING", "GDPR", "ACCOUNT", "TECHNICAL", "EVENT", "OTHER"];
   if (category && !validCategories.includes(category)) {
-    return NextResponse.json({ error: "Categorie invalide" }, { status: 400 });
+    return NextResponse.json({ error: "Catégorie invalide" }, { status: 400 });
   }
 
   const supportMessage = await prisma.supportMessage.create({

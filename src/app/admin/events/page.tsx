@@ -17,8 +17,8 @@ import { useToast } from "@/hooks/use-toast";
 
 const STATUS_LABELS: Record<string, { label: string; color: string; dot: string }> = {
   DRAFT: { label: "Brouillon", color: "bg-amber-100 text-amber-700 border-amber-200", dot: "bg-amber-500" },
-  PUBLISHED: { label: "Publie", color: "bg-emerald-100 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
-  ARCHIVED: { label: "Archive", color: "bg-gray-100 text-gray-600 border-gray-200", dot: "bg-gray-400" },
+  PUBLISHED: { label: "Publié", color: "bg-emerald-100 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
+  ARCHIVED: { label: "Archivé", color: "bg-gray-100 text-gray-600 border-gray-200", dot: "bg-gray-400" },
 };
 
 const SPORT_LABELS: Record<string, string> = {
@@ -111,7 +111,7 @@ export default function AdminEventsPage() {
         console.error("Error:", error);
         toast({
           title: "Erreur",
-          description: "Impossible de charger les evenements",
+          description: "Impossible de charger les événements",
           variant: "destructive",
         });
       } finally {
@@ -177,8 +177,8 @@ export default function AdminEventsPage() {
 
       if (response.ok) {
         toast({
-          title: "Statut mis a jour",
-          description: `Evenement passe en "${STATUS_LABELS[newStatus]?.label || newStatus}"`,
+          title: "Statut mis à jour",
+          description: `Événement passé en "${STATUS_LABELS[newStatus]?.label || newStatus}"`,
         });
         // Refresh current page
         fetchEvents(pagination.page, search, statusFilter, sortBy);
@@ -210,8 +210,8 @@ export default function AdminEventsPage() {
 
       if (response.ok) {
         toast({
-          title: "Evenement supprime",
-          description: "L'evenement a ete supprime avec succes",
+          title: "Événement supprimé",
+          description: "L'événement a été supprimé avec succès",
         });
         setConfirmDelete(null);
         fetchEvents(pagination.page, search, statusFilter, sortBy);
@@ -246,8 +246,8 @@ export default function AdminEventsPage() {
       if (response.ok) {
         const data = await response.json();
         toast({
-          title: "Retraitement lance",
-          description: data.message || "Le retraitement IA a ete lance",
+          title: "Retraitement lancé",
+          description: data.message || "Le retraitement IA a été lancé",
         });
         setConfirmReprocess(null);
       } else {
@@ -290,9 +290,9 @@ export default function AdminEventsPage() {
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-navy">Evenements</h1>
+          <h1 className="text-3xl font-bold text-navy">Événements</h1>
           <p className="text-muted-foreground mt-1">
-            Gestion et supervision de tous les evenements de la plateforme
+            Gestion et supervision de tous les événements de la plateforme
           </p>
         </div>
       </div>
@@ -313,7 +313,7 @@ export default function AdminEventsPage() {
           <CardHeader className="pb-2 pt-4 px-4">
             <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-              Publies
+              Publiés
             </CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4">
@@ -335,7 +335,7 @@ export default function AdminEventsPage() {
           <CardHeader className="pb-2 pt-4 px-4">
             <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-gray-400 inline-block" />
-              Archives
+              Archivés
             </CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4">
@@ -396,8 +396,8 @@ export default function AdminEventsPage() {
               <SelectContent>
                 <SelectItem value="all">Tous les statuts</SelectItem>
                 <SelectItem value="DRAFT">Brouillon</SelectItem>
-                <SelectItem value="PUBLISHED">Publie</SelectItem>
-                <SelectItem value="ARCHIVED">Archive</SelectItem>
+                <SelectItem value="PUBLISHED">Publié</SelectItem>
+                <SelectItem value="ARCHIVED">Archivé</SelectItem>
               </SelectContent>
             </Select>
             <Select value={sortBy} onValueChange={setSortBy}>
@@ -422,7 +422,7 @@ export default function AdminEventsPage() {
           <CardContent className="py-16">
             <div className="flex flex-col items-center gap-3">
               <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-              <p className="text-muted-foreground">Chargement des evenements...</p>
+              <p className="text-muted-foreground">Chargement des événements...</p>
             </div>
           </CardContent>
         </Card>
@@ -443,9 +443,9 @@ export default function AdminEventsPage() {
                   d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                 />
               </svg>
-              <p className="text-muted-foreground text-lg">Aucun evenement trouve</p>
+              <p className="text-muted-foreground text-lg">Aucun événement trouvé</p>
               <p className="text-muted-foreground text-sm mt-1">
-                Essayez de modifier vos criteres de recherche
+                Essayez de modifier vos critères de recherche
               </p>
             </div>
           </CardContent>
@@ -563,7 +563,7 @@ export default function AdminEventsPage() {
                 {isExpanded && (
                   <div className="border-t bg-white/60">
                     <div className="p-5">
-                      {/* Details grid */}
+                      {/* Détails grid */}
                       <div className="grid md:grid-cols-3 gap-6 mb-5">
                         {/* Revenue detail */}
                         <div className="bg-white/80 rounded-xl p-4 border border-gray-100">
@@ -587,7 +587,7 @@ export default function AdminEventsPage() {
                               <span>{formatCurrency(event.revenue - event.platformFee)}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-muted-foreground">Commandes payees</span>
+                              <span className="text-muted-foreground">Commandes payées</span>
                               <span>{event.paidOrders}</span>
                             </div>
                             {event.paidOrders > 0 && (
@@ -682,7 +682,7 @@ export default function AdminEventsPage() {
                               ))}
                             </div>
                           ) : (
-                            <p className="text-sm text-muted-foreground italic">Aucun dossard detecte</p>
+                            <p className="text-sm text-muted-foreground italic">Aucun dossard détecté</p>
                           )}
 
                           {/* Photographer email */}
@@ -707,8 +707,8 @@ export default function AdminEventsPage() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="DRAFT">Brouillon</SelectItem>
-                            <SelectItem value="PUBLISHED">Publie</SelectItem>
-                            <SelectItem value="ARCHIVED">Archive</SelectItem>
+                            <SelectItem value="PUBLISHED">Publié</SelectItem>
+                            <SelectItem value="ARCHIVED">Archivé</SelectItem>
                           </SelectContent>
                         </Select>
 
@@ -805,8 +805,8 @@ export default function AdminEventsPage() {
                             }}
                             title={
                               event.paidOrders > 0
-                                ? `Suppression impossible : ${event.paidOrders} commande(s) payee(s)`
-                                : "Supprimer l'evenement"
+                                ? `Suppression impossible : ${event.paidOrders} commande(s) payée(s)`
+                                : "Supprimer l'événement"
                             }
                           >
                             <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -817,7 +817,7 @@ export default function AdminEventsPage() {
                         ) : (
                           <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-1.5" onClick={(e) => e.stopPropagation()}>
                             <span className="text-sm text-red-700 font-medium">
-                              Supprimer definitivement cet evenement et ses {event.photoCount} photos ?
+                              Supprimer définitivement cet événement et ses {event.photoCount} photos ?
                             </span>
                             <Button
                               size="sm"
@@ -856,7 +856,7 @@ export default function AdminEventsPage() {
           {pagination.totalPages > 1 && (
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 pt-4">
               <p className="text-sm text-muted-foreground">
-                {pagination.total} evenement{pagination.total !== 1 ? "s" : ""} au total
+                {pagination.total} événement{pagination.total !== 1 ? "s" : ""} au total
                 {pageOrders > 0 && (
                   <span className="ml-2">
                     -- {pageOrders} commande{pageOrders !== 1 ? "s" : ""} sur cette page
@@ -873,7 +873,7 @@ export default function AdminEventsPage() {
                   <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
-                  Precedent
+                  Précédent
                 </Button>
                 <div className="flex items-center gap-1">
                   {Array.from({ length: Math.min(pagination.totalPages, 5) }, (_, i) => {

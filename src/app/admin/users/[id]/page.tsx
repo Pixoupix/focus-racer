@@ -131,8 +131,8 @@ export default function AdminUserDetailPage({
           prev ? { ...prev, isActive: updated.isActive } : null
         );
         toast({
-          title: "Mis a jour",
-          description: `Compte ${updated.isActive ? "active" : "desactive"}`,
+          title: "Mis à jour",
+          description: `Compte ${updated.isActive ? "activé" : "désactivé"}`,
         });
       }
     } catch {
@@ -151,8 +151,8 @@ export default function AdminUserDetailPage({
         const updated = await response.json();
         setUser((prev) => (prev ? { ...prev, role: updated.role } : null));
         toast({
-          title: "Mis a jour",
-          description: `Role change en ${getRoleLabel(updated.role)}`,
+          title: "Mis à jour",
+          description: `Rôle changé en ${getRoleLabel(updated.role)}`,
         });
       }
     } catch {
@@ -169,8 +169,8 @@ export default function AdminUserDetailPage({
         const data = await response.json();
         setTempPassword(data.tempPassword);
         toast({
-          title: "Mot de passe reinitialise",
-          description: "Un mot de passe temporaire a ete genere",
+          title: "Mot de passe réinitialisé",
+          description: "Un mot de passe temporaire a été généré",
         });
       }
     } catch {
@@ -183,7 +183,7 @@ export default function AdminUserDetailPage({
     if (isNaN(amount) || amount === 0) {
       toast({
         title: "Montant invalide",
-        description: "Entrez un nombre positif ou negatif non nul",
+        description: "Entrez un nombre positif ou négatif non nul",
         variant: "destructive",
       });
       return;
@@ -205,8 +205,8 @@ export default function AdminUserDetailPage({
         setCreditAmount("");
         setCreditReason("");
         toast({
-          title: "Credits mis a jour",
-          description: `${amount > 0 ? "+" : ""}${amount} credits appliques`,
+          title: "Crédits mis à jour",
+          description: `${amount > 0 ? "+" : ""}${amount} crédits appliqués`,
         });
         // Refresh transaction history
         fetchCredits();
@@ -214,7 +214,7 @@ export default function AdminUserDetailPage({
         const error = await response.json();
         toast({
           title: "Erreur",
-          description: error.error || "Impossible de modifier les credits",
+          description: error.error || "Impossible de modifier les crédits",
           variant: "destructive",
         });
       }
@@ -253,7 +253,7 @@ export default function AdminUserDetailPage({
   const getTransactionTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
       PURCHASE: "Achat",
-      DEDUCTION: "Deduction",
+      DEDUCTION: "Déduction",
       REFUND: "Remboursement",
       ADMIN_GRANT: "Admin",
     };
@@ -289,12 +289,12 @@ export default function AdminUserDetailPage({
   if (!user) {
     return (
       <div className="animate-fade-in text-center py-20">
-        <p className="text-red-600 text-lg">Utilisateur non trouve</p>
+        <p className="text-red-600 text-lg">Utilisateur non trouvé</p>
         <Link
           href="/focus-mgr-7k9x/users"
           className="text-emerald hover:underline mt-4 inline-block"
         >
-          Retour a la liste
+          Retour à la liste
         </Link>
       </div>
     );
@@ -306,7 +306,7 @@ export default function AdminUserDetailPage({
         href="/focus-mgr-7k9x/users"
         className="text-emerald hover:text-emerald-dark hover:underline mb-4 inline-block transition-colors duration-200"
       >
-        &larr; Retour a la liste
+        &larr; Retour à la liste
       </Link>
 
       {/* Header */}
@@ -328,7 +328,7 @@ export default function AdminUserDetailPage({
         <Card className="glass-card rounded-2xl">
           <CardContent className="pt-4 pb-4 px-4 text-center">
             <p className="text-2xl font-bold text-emerald">{user.credits}</p>
-            <p className="text-xs text-muted-foreground mt-1">Credits</p>
+            <p className="text-xs text-muted-foreground mt-1">Crédits</p>
           </CardContent>
         </Card>
         <Card className="glass-card rounded-2xl">
@@ -342,7 +342,7 @@ export default function AdminUserDetailPage({
             <p className="text-2xl font-bold text-navy">
               {formatCurrency(user.totalRevenue)}
             </p>
-            <p className="text-xs text-muted-foreground mt-1">CA genere</p>
+            <p className="text-xs text-muted-foreground mt-1">CA généré</p>
           </CardContent>
         </Card>
         <Card className="glass-card rounded-2xl">
@@ -356,7 +356,7 @@ export default function AdminUserDetailPage({
             <p className="text-2xl font-bold text-navy">
               {user._count.events}
             </p>
-            <p className="text-xs text-muted-foreground mt-1">Evenements</p>
+            <p className="text-xs text-muted-foreground mt-1">Événements</p>
           </CardContent>
         </Card>
         <Card className="glass-card rounded-2xl">
@@ -381,15 +381,15 @@ export default function AdminUserDetailPage({
               <p className="font-medium text-navy">{user.email}</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Telephone</p>
+              <p className="text-sm text-muted-foreground">Téléphone</p>
               <p className="font-medium text-navy">
-                {user.phone || "Non renseigne"}
+                {user.phone || "Non renseigné"}
               </p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Societe</p>
+              <p className="text-sm text-muted-foreground">Société</p>
               <p className="font-medium text-navy">
-                {user.company || "Non renseigne"}
+                {user.company || "Non renseigné"}
               </p>
             </div>
             <div>
@@ -400,7 +400,7 @@ export default function AdminUserDetailPage({
             </div>
             <div>
               <p className="text-sm text-muted-foreground">
-                Derniere activite
+                Dernière activité
               </p>
               <p className="font-medium text-navy">
                 {formatDateTime(user.updatedAt)}
@@ -426,7 +426,7 @@ export default function AdminUserDetailPage({
                   </>
                 ) : (
                   <span className="text-sm text-muted-foreground">
-                    Non connecte
+                    Non connecté
                   </span>
                 )}
               </div>
@@ -434,7 +434,7 @@ export default function AdminUserDetailPage({
             {user.buyerOrdersCount > 0 && (
               <div>
                 <p className="text-sm text-muted-foreground">
-                  Achats effectues
+                  Achats effectués
                 </p>
                 <p className="font-medium text-navy">
                   {user.buyerOrdersCount} commande
@@ -465,7 +465,7 @@ export default function AdminUserDetailPage({
                   <SelectItem value="ORGANIZER">Organisateur</SelectItem>
                   <SelectItem value="AGENCY">Agence</SelectItem>
                   <SelectItem value="CLUB">Club</SelectItem>
-                  <SelectItem value="FEDERATION">Federation</SelectItem>
+                  <SelectItem value="FEDERATION">Fédération</SelectItem>
                   <SelectItem value="RUNNER">Coureur</SelectItem>
                   <SelectItem value="ADMIN">Admin</SelectItem>
                 </SelectContent>
@@ -486,7 +486,7 @@ export default function AdminUserDetailPage({
                 }`}
               >
                 {user.isActive
-                  ? "Desactiver le compte"
+                  ? "Désactiver le compte"
                   : "Activer le compte"}
               </Button>
             </div>
@@ -500,7 +500,7 @@ export default function AdminUserDetailPage({
                 onClick={resetPassword}
                 className="w-full border-emerald text-emerald hover:bg-emerald-50 transition-all duration-200"
               >
-                Reinitialiser le mot de passe
+                Réinitialiser le mot de passe
               </Button>
               {tempPassword && (
                 <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
@@ -509,8 +509,8 @@ export default function AdminUserDetailPage({
                     <code className="font-mono font-bold">{tempPassword}</code>
                   </p>
                   <p className="text-xs text-amber-600 mt-1">
-                    Communiquez ce mot de passe a l&apos;utilisateur de maniere
-                    securisee.
+                    Communiquez ce mot de passe à l&apos;utilisateur de manière
+                    sécurisée.
                   </p>
                 </div>
               )}
@@ -540,9 +540,9 @@ export default function AdminUserDetailPage({
       <div className="grid md:grid-cols-2 gap-6 mb-8">
         <Card className="glass-card rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-navy">Gestion des credits</CardTitle>
+            <CardTitle className="text-navy">Gestion des crédits</CardTitle>
             <CardDescription className="text-muted-foreground">
-              Ajouter ou retirer des credits manuellement
+              Ajouter ou retirer des crédits manuellement
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -559,7 +559,7 @@ export default function AdminUserDetailPage({
 
             <div>
               <label className="text-sm text-muted-foreground mb-1 block">
-                Montant (positif = ajouter, negatif = retirer)
+                Montant (positif = ajouter, négatif = retirer)
               </label>
               <Input
                 type="number"
@@ -599,10 +599,10 @@ export default function AdminUserDetailPage({
         <Card className="glass-card rounded-2xl">
           <CardHeader>
             <CardTitle className="text-navy">
-              Historique des credits
+              Historique des crédits
             </CardTitle>
             <CardDescription className="text-muted-foreground">
-              Les 10 dernieres transactions
+              Les 10 dernières transactions
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -662,9 +662,9 @@ export default function AdminUserDetailPage({
       {user.events.length > 0 && (
         <Card className="glass-card rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-navy">Evenements recents</CardTitle>
+            <CardTitle className="text-navy">Événements récents</CardTitle>
             <CardDescription className="text-muted-foreground">
-              Les 10 derniers evenements de cet utilisateur
+              Les 10 derniers événements de cet utilisateur
             </CardDescription>
           </CardHeader>
           <CardContent>

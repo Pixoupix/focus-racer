@@ -39,8 +39,8 @@ const CATEGORY_OPTIONS = [
   { value: "SORTING", label: "Tri photos" },
   { value: "GDPR", label: "RGPD" },
   { value: "ACCOUNT", label: "Mon compte" },
-  { value: "TECHNICAL", label: "Probleme technique" },
-  { value: "EVENT", label: "Evenement" },
+  { value: "TECHNICAL", label: "Problème technique" },
+  { value: "EVENT", label: "Événement" },
   { value: "OTHER", label: "Autre" },
 ];
 
@@ -50,15 +50,15 @@ const CATEGORY_LABELS: Record<string, string> = {
   GDPR: "RGPD",
   ACCOUNT: "Mon compte",
   TECHNICAL: "Technique",
-  EVENT: "Evenement",
+  EVENT: "Événement",
   OTHER: "Autre",
 };
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   OPEN: { label: "Ouvert", className: "bg-amber-100 text-amber-800 border-amber-200" },
   IN_PROGRESS: { label: "En cours", className: "bg-blue-100 text-blue-800 border-blue-200" },
-  RESOLVED: { label: "Resolu", className: "bg-emerald-100 text-emerald-800 border-emerald-200" },
-  CLOSED: { label: "Ferme", className: "bg-gray-100 text-gray-600 border-gray-200" },
+  RESOLVED: { label: "Résolu", className: "bg-emerald-100 text-emerald-800 border-emerald-200" },
+  CLOSED: { label: "Fermé", className: "bg-gray-100 text-gray-600 border-gray-200" },
 };
 
 export default function PhotographerSupportPage() {
@@ -133,8 +133,8 @@ export default function PhotographerSupportPage() {
 
       if (res.ok) {
         toast({
-          title: "Message envoye",
-          description: "Votre message a ete transmis au support. Nous vous repondrons dans les meilleurs delais.",
+          title: "Message envoyé",
+          description: "Votre message a été transmis au support. Nous vous répondrons dans les meilleurs délais.",
         });
         setSubject("");
         setCategory("OTHER");
@@ -173,7 +173,7 @@ export default function PhotographerSupportPage() {
         <div>
           <h1 className="text-2xl font-bold font-display text-gray-900">Support</h1>
           <p className="text-gray-500 mt-1">
-            Contactez notre equipe pour toute question ou probleme
+            Contactez notre équipe pour toute question ou problème
           </p>
         </div>
         <Button
@@ -219,16 +219,16 @@ export default function PhotographerSupportPage() {
                     id="subject"
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
-                    placeholder="Decrivez brievement votre probleme"
+                    placeholder="Décrivez brièvement votre problème"
                     className="bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald/20 focus:border-emerald"
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="category" className="text-gray-700">Categorie</Label>
+                  <Label htmlFor="category" className="text-gray-700">Catégorie</Label>
                   <Select value={category} onValueChange={setCategory}>
                     <SelectTrigger className="bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald/20 focus:border-emerald">
-                      <SelectValue placeholder="Selectionnez une categorie" />
+                      <SelectValue placeholder="Sélectionnez une catégorie" />
                     </SelectTrigger>
                     <SelectContent>
                       {CATEGORY_OPTIONS.map((opt) => (
@@ -246,7 +246,7 @@ export default function PhotographerSupportPage() {
                   id="message"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Decrivez votre probleme en detail..."
+                  placeholder="Décrivez votre problème en détail..."
                   rows={5}
                   className="flex w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald/20 focus:border-emerald disabled:cursor-not-allowed disabled:opacity-50 resize-y"
                   required
@@ -310,7 +310,7 @@ export default function PhotographerSupportPage() {
             </div>
             <p className="text-gray-500 mb-2">Aucun message de support</p>
             <p className="text-sm text-gray-400 mb-6">
-              Vous n&apos;avez pas encore envoye de message au support.
+              Vous n&apos;avez pas encore envoyé de message au support.
             </p>
             <Button
               onClick={() => setShowForm(true)}
@@ -343,7 +343,7 @@ export default function PhotographerSupportPage() {
                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            Repondu
+                            Répondu
                           </span>
                         )}
                       </div>
@@ -391,7 +391,7 @@ export default function PhotographerSupportPage() {
                               <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                               </svg>
-                              <span className="text-sm font-medium text-emerald-700">Reponse du support</span>
+                              <span className="text-sm font-medium text-emerald-700">Réponse du support</span>
                               {msg.repliedAt && (
                                 <span className="text-xs text-emerald-500">
                                   {new Date(msg.repliedAt).toLocaleDateString("fr-FR", {

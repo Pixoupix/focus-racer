@@ -40,9 +40,9 @@ interface Pagination {
 const CATEGORY_OPTIONS = [
   { value: "BILLING", label: "Facturation / Paiement" },
   { value: "ACCOUNT", label: "Mon compte" },
-  { value: "TECHNICAL", label: "Probleme technique" },
-  { value: "EVENT", label: "Evenement / Photos" },
-  { value: "GDPR", label: "RGPD / Donnees personnelles" },
+  { value: "TECHNICAL", label: "Problème technique" },
+  { value: "EVENT", label: "Événement / Photos" },
+  { value: "GDPR", label: "RGPD / Données personnelles" },
   { value: "OTHER", label: "Autre" },
 ];
 
@@ -52,15 +52,15 @@ const CATEGORY_LABELS: Record<string, string> = {
   GDPR: "RGPD",
   ACCOUNT: "Mon compte",
   TECHNICAL: "Technique",
-  EVENT: "Evenement",
+  EVENT: "Événement",
   OTHER: "Autre",
 };
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   OPEN: { label: "Ouvert", className: "bg-amber-100 text-amber-800 border-amber-200" },
   IN_PROGRESS: { label: "En cours", className: "bg-blue-100 text-blue-800 border-blue-200" },
-  RESOLVED: { label: "Resolu", className: "bg-emerald-100 text-emerald-800 border-emerald-200" },
-  CLOSED: { label: "Ferme", className: "bg-gray-100 text-gray-600 border-gray-200" },
+  RESOLVED: { label: "Résolu", className: "bg-emerald-100 text-emerald-800 border-emerald-200" },
+  CLOSED: { label: "Fermé", className: "bg-gray-100 text-gray-600 border-gray-200" },
 };
 
 export default function RunnerSupportPage() {
@@ -142,8 +142,8 @@ export default function RunnerSupportPage() {
 
       if (res.ok) {
         toast({
-          title: "Message envoye",
-          description: "Notre equipe vous repondra dans les meilleurs delais.",
+          title: "Message envoyé",
+          description: "Notre équipe vous répondra dans les meilleurs délais.",
         });
         setSubject("");
         setCategory("OTHER");
@@ -198,7 +198,7 @@ export default function RunnerSupportPage() {
             <div>
               <h1 className="text-2xl font-bold text-navy">Support</h1>
               <p className="text-muted-foreground mt-1">
-                Besoin d&apos;aide ? Contactez notre equipe
+                Besoin d&apos;aide ? Contactez notre équipe
               </p>
             </div>
             <Button
@@ -242,16 +242,16 @@ export default function RunnerSupportPage() {
                         id="subject"
                         value={subject}
                         onChange={(e) => setSubject(e.target.value)}
-                        placeholder="Ex: Probleme de telechargement"
+                        placeholder="Ex: Problème de téléchargement"
                         className="bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald/20 focus:border-emerald"
                         required
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="category" className="text-gray-700">Categorie</Label>
+                      <Label htmlFor="category" className="text-gray-700">Catégorie</Label>
                       <Select value={category} onValueChange={setCategory}>
                         <SelectTrigger className="bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald/20 focus:border-emerald">
-                          <SelectValue placeholder="Selectionnez" />
+                          <SelectValue placeholder="Sélectionnez" />
                         </SelectTrigger>
                         <SelectContent>
                           {CATEGORY_OPTIONS.map((opt) => (
@@ -269,7 +269,7 @@ export default function RunnerSupportPage() {
                       id="message"
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
-                      placeholder="Decrivez votre probleme ou votre question..."
+                      placeholder="Décrivez votre problème ou votre question..."
                       rows={5}
                       className="flex w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald/20 focus:border-emerald disabled:cursor-not-allowed disabled:opacity-50 resize-y"
                       required
@@ -333,7 +333,7 @@ export default function RunnerSupportPage() {
                 </div>
                 <p className="text-muted-foreground mb-2">Aucun message</p>
                 <p className="text-sm text-gray-400 mb-6">
-                  Vous n&apos;avez pas encore contacte le support.
+                  Vous n&apos;avez pas encore contacté le support.
                 </p>
                 <Button
                   onClick={() => setShowForm(true)}
@@ -366,7 +366,7 @@ export default function RunnerSupportPage() {
                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
-                                Repondu
+                                Répondu
                               </span>
                             )}
                           </div>
@@ -414,7 +414,7 @@ export default function RunnerSupportPage() {
                                   <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                   </svg>
-                                  <span className="text-sm font-medium text-emerald-700">Reponse de l&apos;equipe Focus Racer</span>
+                                  <span className="text-sm font-medium text-emerald-700">Réponse de l&apos;équipe Focus Racer</span>
                                   {msg.repliedAt && (
                                     <span className="text-xs text-emerald-500">
                                       {new Date(msg.repliedAt).toLocaleDateString("fr-FR", {

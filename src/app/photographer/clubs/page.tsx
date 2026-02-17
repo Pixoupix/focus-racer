@@ -114,7 +114,7 @@ export default function ClubsPage() {
       if (res.ok) {
         setSearchResult(data);
         toast({
-          title: "Club trouve",
+          title: "Club trouvé",
           description: data.message,
         });
         setSearchEmail("");
@@ -163,7 +163,7 @@ export default function ClubsPage() {
             Mes clubs
           </h1>
           <p className="text-gray-500 mt-1">
-            Gerez les clubs affilies a votre federation
+            Gérez les clubs affiliés à votre fédération
           </p>
         </div>
         <Card className="glass-card rounded-2xl border-0 shadow-card">
@@ -184,11 +184,11 @@ export default function ClubsPage() {
               </svg>
             </div>
             <p className="text-gray-700 font-medium mb-2">
-              Acces reserve aux federations
+              Accès réservé aux fédérations
             </p>
             <p className="text-sm text-gray-500">
-              Cette page est reservee aux comptes de type Federation pour la gestion
-              de leurs clubs affilies.
+              Cette page est réservée aux comptes de type Fédération pour la gestion
+              de leurs clubs affiliés.
             </p>
           </CardContent>
         </Card>
@@ -205,7 +205,7 @@ export default function ClubsPage() {
             Mes clubs
           </h1>
           <p className="text-gray-500 mt-1">
-            Gerez les clubs affilies a votre federation
+            Gérez les clubs affiliés à votre fédération
           </p>
         </div>
         <Button
@@ -331,7 +331,7 @@ export default function ClubsPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">{totalEvents}</p>
-                <p className="text-sm text-gray-500">Evenement{totalEvents !== 1 ? "s" : ""} total</p>
+                <p className="text-sm text-gray-500">Événement{totalEvents !== 1 ? "s" : ""} total</p>
               </div>
             </div>
           </CardContent>
@@ -425,7 +425,7 @@ export default function ClubsPage() {
 
               <p className="text-xs text-gray-400">
                 Recherchez un club inscrit sur Focus Racer par son email.
-                Les clubs avec un compte actif apparaitront automatiquement dans votre liste.
+                Les clubs avec un compte actif apparaîtront automatiquement dans votre liste.
               </p>
             </form>
           </CardContent>
@@ -475,13 +475,13 @@ export default function ClubsPage() {
             </div>
             <p className="text-gray-700 font-medium mb-2">
               {clubs.length === 0
-                ? "Aucun club enregistre"
-                : "Aucun resultat"}
+                ? "Aucun club enregistré"
+                : "Aucun résultat"}
             </p>
             <p className="text-sm text-gray-500">
               {clubs.length === 0
                 ? "Aucun club n'est encore inscrit sur la plateforme."
-                : "Aucun club ne correspond a votre recherche."}
+                : "Aucun club ne correspond à votre recherche."}
             </p>
           </CardContent>
         </Card>
@@ -493,7 +493,7 @@ export default function ClubsPage() {
               <div className="col-span-4">Club</div>
               <div className="col-span-2">Contact</div>
               <div className="col-span-2">Localisation</div>
-              <div className="col-span-1 text-center">Evenements</div>
+              <div className="col-span-1 text-center">Événements</div>
               <div className="col-span-1 text-center">Statut</div>
               <div className="col-span-2 text-center">Inscription</div>
             </div>
@@ -622,7 +622,7 @@ export default function ClubsPage() {
                         </div>
                         <div className="space-y-1">
                           <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                            Telephone
+                            Téléphone
                           </p>
                           <p className="text-sm text-gray-900">
                             {club.phone || "-"}

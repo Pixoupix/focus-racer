@@ -68,7 +68,7 @@ interface RunnerStats {
 // ---------------------------------------------------------------------------
 
 const SPORT_LABELS: Record<string, string> = {
-  RUNNING: "Course a pied",
+  RUNNING: "Course à pied",
   TRAIL: "Trail",
   TRIATHLON: "Triathlon",
   CYCLING: "Cyclisme",
@@ -99,13 +99,13 @@ const SPORT_COLORS: Record<string, { bg: string; text: string; badge: string }> 
 
 const MONTH_LABELS: Record<string, string> = {
   "01": "Jan",
-  "02": "Fev",
+  "02": "Fév",
   "03": "Mar",
   "04": "Avr",
   "05": "Mai",
   "06": "Jun",
   "07": "Jul",
-  "08": "Aou",
+  "08": "Aoû",
   "09": "Sep",
   "10": "Oct",
   "11": "Nov",
@@ -173,7 +173,7 @@ function SpendingChart({ data }: { data: MonthlySpending[] }) {
   if (data.length === 0) {
     return (
       <div className="flex items-center justify-center h-40 text-muted-foreground text-sm">
-        Aucun achat enregistre
+        Aucun achat enregistré
       </div>
     );
   }
@@ -277,7 +277,7 @@ export default function RunnerStatisticsPage() {
           <div className="mb-8">
             <h1 className="text-2xl font-bold text-navy">Mes statistiques</h1>
             <p className="text-muted-foreground mt-1">
-              Retrouvez un resume de votre activite sur Focus Racer
+              Retrouvez un résumé de votre activité sur Focus Racer
             </p>
           </div>
 
@@ -290,7 +290,7 @@ export default function RunnerStatisticsPage() {
             ) : (
               <>
                 <KPICard
-                  label="Evenements"
+                  label="Événements"
                   value={overview?.totalEvents || 0}
                   subtitle={`${overview?.eventsRegistered || 0} inscrits`}
                   iconBg="bg-teal-50"
@@ -298,7 +298,7 @@ export default function RunnerStatisticsPage() {
                   icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>}
                 />
                 <KPICard
-                  label="Photos achetees"
+                  label="Photos achetées"
                   value={overview?.totalPhotos || 0}
                   subtitle={`${overview?.totalOrders || 0} commandes`}
                   iconBg="bg-emerald-50"
@@ -306,7 +306,7 @@ export default function RunnerStatisticsPage() {
                   icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>}
                 />
                 <KPICard
-                  label="Total depense"
+                  label="Total dépensé"
                   value={`${(overview?.totalSpent || 0).toFixed(2)}$`}
                   subtitle={`Panier moyen: ${(overview?.avgBasket || 0).toFixed(2)}$`}
                   iconBg="bg-green-50"
@@ -317,7 +317,7 @@ export default function RunnerStatisticsPage() {
                 <KPICard
                   label="Sport favori"
                   value={favoriteSportLabel}
-                  subtitle={overview?.favoriteSport ? `${sportBreakdown[overview.favoriteSport] || 0} evenement(s)` : undefined}
+                  subtitle={overview?.favoriteSport ? `${sportBreakdown[overview.favoriteSport] || 0} événement(s)` : undefined}
                   iconBg={favoriteSportColors.bg}
                   iconColor={favoriteSportColors.text}
                   icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d={SPORT_ICONS[overview?.favoriteSport || "OTHER"] || SPORT_ICONS.OTHER} /></svg>}
@@ -331,7 +331,7 @@ export default function RunnerStatisticsPage() {
             <div className="lg:col-span-2">
               <Card className="glass-card rounded-2xl border-0">
                 <CardHeader>
-                  <CardTitle className="text-lg font-display text-navy">Depenses mensuelles</CardTitle>
+                  <CardTitle className="text-lg font-display text-navy">Dépenses mensuelles</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {isLoading ? (
@@ -346,7 +346,7 @@ export default function RunnerStatisticsPage() {
             {/* Sport Breakdown */}
             <Card className="glass-card rounded-2xl border-0">
               <CardHeader>
-                <CardTitle className="text-lg font-display text-navy">Sports pratiques</CardTitle>
+                <CardTitle className="text-lg font-display text-navy">Sports pratiqués</CardTitle>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
@@ -387,7 +387,7 @@ export default function RunnerStatisticsPage() {
                       })}
                   </div>
                 ) : (
-                  <p className="text-muted-foreground text-sm text-center py-4">Aucune donnee</p>
+                  <p className="text-muted-foreground text-sm text-center py-4">Aucune donnée</p>
                 )}
               </CardContent>
             </Card>
@@ -469,7 +469,7 @@ export default function RunnerStatisticsPage() {
                   <p className="text-muted-foreground mb-4">Aucun achat pour le moment</p>
                   <Link href="/runner">
                     <Button className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald rounded-lg">
-                      Decouvrir les courses
+                      Découvrir les courses
                     </Button>
                   </Link>
                 </div>
@@ -480,7 +480,7 @@ export default function RunnerStatisticsPage() {
           {/* Events Participated */}
           <Card className="glass-card rounded-2xl border-0 mb-8">
             <CardHeader>
-              <CardTitle className="text-lg font-display text-navy">Evenements</CardTitle>
+              <CardTitle className="text-lg font-display text-navy">Événements</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -545,7 +545,7 @@ export default function RunnerStatisticsPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
                     </svg>
                   </div>
-                  <p className="text-muted-foreground mb-4">Aucun evenement</p>
+                  <p className="text-muted-foreground mb-4">Aucun événement</p>
                   <Link href="/runner">
                     <Button className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald rounded-lg">
                       Explorer les courses

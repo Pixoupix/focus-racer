@@ -93,10 +93,10 @@ interface PaymentStats {
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   PENDING: { label: "En attente", color: "bg-yellow-100 text-yellow-800" },
-  PAID: { label: "Paye", color: "bg-emerald-100 text-emerald-700" },
-  DELIVERED: { label: "Livre", color: "bg-teal-100 text-teal-800" },
-  REFUNDED: { label: "Rembourse", color: "bg-red-100 text-red-700" },
-  EXPIRED: { label: "Expire", color: "bg-gray-100 text-gray-600" },
+  PAID: { label: "Payé", color: "bg-emerald-100 text-emerald-700" },
+  DELIVERED: { label: "Livré", color: "bg-teal-100 text-teal-800" },
+  REFUNDED: { label: "Remboursé", color: "bg-red-100 text-red-700" },
+  EXPIRED: { label: "Expiré", color: "bg-gray-100 text-gray-600" },
 };
 
 const PACK_LABELS: Record<string, string> = {
@@ -326,7 +326,7 @@ export default function AdminPaymentsPage() {
                 {euro(stats.revenue.total)}
               </p>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                Total commandes payees
+                Total commandes payées
               </p>
             </CardContent>
           </Card>
@@ -366,7 +366,7 @@ export default function AdminPaymentsPage() {
                 {euro(stats.revenue.net)}
               </p>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                Apres commission
+                Après commission
               </p>
             </CardContent>
           </Card>
@@ -383,16 +383,16 @@ export default function AdminPaymentsPage() {
                 {euro(stats.revenue.avgBasket)}
               </p>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                Par commande payee
+                Par commande payée
               </p>
             </CardContent>
           </Card>
 
-          {/* Commandes payees */}
+          {/* Commandes payées */}
           <Card className="glass-card rounded-2xl border-l-4 border-l-navy overflow-hidden">
             <CardHeader className="pb-1 pt-4 px-4">
               <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Commandes payees
+                Commandes payées
               </CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4">
@@ -417,7 +417,7 @@ export default function AdminPaymentsPage() {
                 {stats.refundRate}%
               </p>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                {stats.refundedOrders} remboursee
+                {stats.refundedOrders} remboursée
                 {stats.refundedOrders > 1 ? "s" : ""}
               </p>
             </CardContent>
@@ -453,7 +453,7 @@ export default function AdminPaymentsPage() {
             <CardContent>
               {stats.monthlyRevenue.length === 0 ? (
                 <p className="text-muted-foreground text-sm py-8 text-center">
-                  Aucune donnee disponible
+                  Aucune donnée disponible
                 </p>
               ) : (
                 <div className="flex items-end gap-3 h-48">
@@ -517,7 +517,7 @@ export default function AdminPaymentsPage() {
             <CardContent>
               {stats.packBreakdown.length === 0 ? (
                 <p className="text-muted-foreground text-sm py-8 text-center">
-                  Aucune donnee
+                  Aucune donnée
                 </p>
               ) : (
                 <div className="space-y-3">
@@ -580,7 +580,7 @@ export default function AdminPaymentsPage() {
                   d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M18.75 4.236c.982.143 1.954.317 2.916.52A6.003 6.003 0 0016.27 9.728M18.75 4.236V4.5c0 2.108-.966 3.99-2.48 5.228m0 0a6.023 6.023 0 01-2.77.894m0 0a6.023 6.023 0 01-2.77-.894"
                 />
               </svg>
-              Top 5 evenements par revenu
+              Top 5 événements par revenu
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -663,10 +663,10 @@ export default function AdminPaymentsPage() {
                 <SelectContent>
                   <SelectItem value="all">Tous les statuts</SelectItem>
                   <SelectItem value="PENDING">En attente</SelectItem>
-                  <SelectItem value="PAID">Paye</SelectItem>
-                  <SelectItem value="DELIVERED">Livre</SelectItem>
-                  <SelectItem value="REFUNDED">Rembourse</SelectItem>
-                  <SelectItem value="EXPIRED">Expire</SelectItem>
+                  <SelectItem value="PAID">Payé</SelectItem>
+                  <SelectItem value="DELIVERED">Livré</SelectItem>
+                  <SelectItem value="REFUNDED">Remboursé</SelectItem>
+                  <SelectItem value="EXPIRED">Expiré</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -753,7 +753,7 @@ export default function AdminPaymentsPage() {
                 />
               </svg>
               <p className="text-muted-foreground mt-2">
-                Aucune commande trouvee
+                Aucune commande trouvée
               </p>
             </div>
           ) : (
@@ -769,7 +769,7 @@ export default function AdminPaymentsPage() {
                         Client
                       </TableHead>
                       <TableHead className="font-semibold text-navy">
-                        Evenement
+                        Événement
                       </TableHead>
                       <TableHead className="font-semibold text-navy">
                         Pack
@@ -802,7 +802,7 @@ export default function AdminPaymentsPage() {
                       const statusCfg =
                         STATUS_CONFIG[order.status] || STATUS_CONFIG.PENDING;
                       const clientName =
-                        order.user?.name || order.guestName || "Invite";
+                        order.user?.name || order.guestName || "Invité";
                       const clientEmail =
                         order.user?.email || order.guestEmail || "";
                       const packLabel = order.pack
@@ -893,7 +893,7 @@ export default function AdminPaymentsPage() {
                                   size="sm"
                                   className="rounded-lg text-xs h-7 px-2"
                                 >
-                                  Details
+                                  Détails
                                 </Button>
                               </Link>
                               {order.status === "PAID" && (
@@ -954,7 +954,7 @@ export default function AdminPaymentsPage() {
                           d="M15.75 19.5L8.25 12l7.5-7.5"
                         />
                       </svg>
-                      Precedent
+                      Précédent
                     </Button>
                     <span className="text-sm text-muted-foreground px-3 py-1 bg-white/50 rounded-lg">
                       Page {pagination.page} / {pagination.totalPages}

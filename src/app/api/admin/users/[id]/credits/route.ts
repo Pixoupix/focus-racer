@@ -10,7 +10,7 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user || (session.user as any).role !== "ADMIN") {
-      return NextResponse.json({ error: "Non autorise" }, { status: 403 });
+      return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     }
 
     const { id } = await params;
@@ -37,7 +37,7 @@ export async function GET(
   } catch (error) {
     console.error("Error fetching credits:", error);
     return NextResponse.json(
-      { error: "Erreur lors de la recuperation des credits" },
+      { error: "Erreur lors de la récupération des crédits" },
       { status: 500 }
     );
   }
@@ -50,7 +50,7 @@ export async function POST(
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user || (session.user as any).role !== "ADMIN") {
-      return NextResponse.json({ error: "Non autorise" }, { status: 403 });
+      return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     }
 
     const { id } = await params;
@@ -117,7 +117,7 @@ export async function POST(
     }
 
     return NextResponse.json(
-      { error: "Erreur lors de la modification des credits" },
+      { error: "Erreur lors de la modification des crédits" },
       { status: 500 }
     );
   }

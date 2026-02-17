@@ -53,6 +53,8 @@ model User {
   email         String    @unique
   password      String
   name          String
+  firstName        String?
+  lastName         String?
   role          UserRole  @default(PHOTOGRAPHER)
   phone         String?
   avatar        String?
@@ -64,6 +66,11 @@ model User {
   bio              String?
   portfolio        String?
   location         String?
+  postalCode       String?
+  city             String?
+  referralSource   String?
+  acceptedCguAt    DateTime?
+  newsletterOptIn  Boolean   @default(false)
   credits          Int       @default(0)
   avgRating        Float     @default(0)
   totalReviews     Int       @default(0)

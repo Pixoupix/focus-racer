@@ -24,8 +24,8 @@ const CREDIT_PACKS = [
 ];
 
 const SUBSCRIPTIONS = [
-  { id: "sub_20k", price: "199 €/an", priceValue: 199, credits: 20000, type: "subscription" as const },
-  { id: "sub_50k", price: "399 €/an", priceValue: 399, credits: 50000, type: "subscription" as const },
+  { id: "sub_20k", price: "199 €/mois", priceValue: 199, credits: 20000, type: "subscription" as const },
+  { id: "sub_50k", price: "399 €/mois", priceValue: 399, credits: 50000, type: "subscription" as const },
 ];
 
 const TYPE_LABELS: Record<string, { label: string; color: string }> = {
@@ -185,13 +185,13 @@ export default function CreditsPage() {
                       <div className="mt-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-sm font-semibold">
                         {sub.price}
                       </div>
-                      <span className="text-[11px] text-gray-400">{(sub.priceValue / (sub.credits * 12)).toFixed(4).replace(".", ",")} €/photo</span>
+                      <span className="text-[11px] text-gray-400">{(sub.priceValue / sub.credits).toFixed(3).replace(".", ",")} €/photo</span>
                     </div>
                   </div>
                 ))}
               </div>
               <p className="text-xs text-gray-400 mt-3 text-center">
-                Paiement annuel via Stripe. 100 credits offerts a l&apos;inscription.
+                Engagement annuel, paiement mensuel via Stripe.
               </p>
             </CardContent>
           </Card>

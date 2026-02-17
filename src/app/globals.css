@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -87,16 +85,15 @@
   }
 
   html {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
   }
 
   body {
     @apply bg-interface text-primary antialiased;
   }
 
-  /* Titres avec Inter Extra Bold */
   h1, h2, h3, .font-display {
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-geist-sans), sans-serif;
     font-weight: 800;
   }
 }
@@ -236,6 +233,26 @@
   /* ===== FOND SOMBRE POUR GALERIE COUREUR ===== */
   .runner-gallery-bg {
     @apply bg-[#042F2E];
+  }
+
+  /* ===== PROTECTION IMAGES (anti-vol) ===== */
+  .protected-image-wrapper {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  .protected-image-wrapper img {
+    -webkit-user-drag: none;
+    user-drag: none;
+    pointer-events: none;
+  }
+
+  /* Prevent selection on entire gallery zone */
+  .gallery-protected {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
   }
 }
 

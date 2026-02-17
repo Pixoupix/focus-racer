@@ -1,12 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { rateLimit } from "@/lib/rate-limit";
+
+const PAGE_SIZE = 100;
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Rate limit: 60 requests/minute per IP
+  const limited = rateLimit(request, "events-public", { limit: 60 });
+  if (limited) return limited;
+
   try {
     const { id } = await params;
+    const { searchParams } = new URL(request.url);
+    const cursor = searchParams.get("cursor"); // photo ID for cursor-based pagination
+    const limit = Math.min(parseInt(searchParams.get("limit") || String(PAGE_SIZE), 10), 200);
 
     const event = await prisma.event.findUnique({
       where: { id, status: "PUBLISHED" },
@@ -27,6 +37,8 @@ export async function GET(
             },
           },
           orderBy: { createdAt: "desc" },
+          take: limit + 1, // Fetch one extra to detect if there are more
+          ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
         },
         _count: {
           select: { photos: true, startListEntries: true },
@@ -38,10 +50,12 @@ export async function GET(
       return NextResponse.json({ error: "Événement non trouvé" }, { status: 404 });
     }
 
-    // Return watermarked thumbnails instead of originals for public gallery
-    const photosPublic = event.photos.map((photo) => ({
+    const hasMore = event.photos.length > limit;
+    const photos = hasMore ? event.photos.slice(0, limit) : event.photos;
+    const nextCursor = hasMore ? photos[photos.length - 1].id : null;
+
+    const photosPublic = photos.map((photo) => ({
       id: photo.id,
-      // Use watermarked thumbnail > web-optimized > HD original (last resort)
       src: photo.thumbnailPath || photo.webPath || photo.path,
       originalName: photo.originalName,
       bibNumbers: photo.bibNumbers,
@@ -63,6 +77,12 @@ export async function GET(
       photoCount: event._count.photos,
       runnerCount: event._count.startListEntries,
       photos: photosPublic,
+      nextCursor,
+      hasMore,
+    }, {
+      headers: {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+      },
     });
   } catch (error) {
     console.error("Error fetching public event:", error);

@@ -2,7 +2,7 @@
  * Bounded processing queue for photo AI pipeline.
  *
  * Limits concurrent photo processing to avoid CPU/memory saturation.
- * Default: 1 concurrent worker (optimized for Render 512MB).
+ * Default: 16 concurrent workers (1 per physical core on dedicated server).
  *
  * Usage:
  *   processingQueue.enqueue(() => processPhoto(photoId, ...))
@@ -10,9 +10,10 @@
 
 type Task = () => Promise<void>;
 
-const MAX_CONCURRENT = parseInt(process.env.AI_MAX_CONCURRENT || "1", 10);
+const MAX_CONCURRENT = parseInt(process.env.AI_MAX_CONCURRENT || "16", 10);
 
 let running = 0;
+let completedSinceGC = 0;
 const queue: Task[] = [];
 
 function tryRunNext() {
@@ -23,9 +24,11 @@ function tryRunNext() {
       .catch((err) => console.error("[Queue] Task error:", err))
       .finally(() => {
         running--;
-        // Force garbage collection hint after each task
-        if (global.gc) {
+        // GC every 10 tasks instead of every task (less overhead on dedicated server)
+        completedSinceGC++;
+        if (completedSinceGC >= 10 && global.gc) {
           global.gc();
+          completedSinceGC = 0;
         }
         tryRunNext();
       });

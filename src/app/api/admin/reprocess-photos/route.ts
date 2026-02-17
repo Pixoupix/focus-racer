@@ -4,8 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import path from "path";
 import fs from "fs/promises";
-import sharp from "sharp";
-import { extractBibNumbers } from "@/lib/ocr";
+import sharp from "@/lib/sharp-config";
+import { detectTextFromImage } from "@/lib/rekognition";
 import { generateWatermarkedThumbnail as createWatermark } from "@/lib/watermark";
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || "./public/uploads";
@@ -16,22 +16,30 @@ async function generateWebVersion(
   originalPath: string,
   eventId: string,
   filename: string
-): Promise<string> {
+): Promise<{ webPath: string; jpegBuffer: Buffer }> {
   const webDir = path.join(UPLOAD_DIR, eventId, "web");
   await fs.mkdir(webDir, { recursive: true });
 
-  const webFilename = `web_${path.parse(filename).name}.jpg`;
-  const webPath = path.join(webDir, webFilename);
+  const webFilename = `web_${path.parse(filename).name}.webp`;
+  const diskPath = path.join(webDir, webFilename);
 
-  await sharp(originalPath)
+  // JPEG buffer for AWS Rekognition (requires JPEG/PNG)
+  const jpegBuffer = await sharp(originalPath)
     .resize(WEB_MAX_DIMENSION, WEB_MAX_DIMENSION, {
       fit: "inside",
       withoutEnlargement: true,
     })
     .jpeg({ quality: WEB_JPEG_QUALITY, mozjpeg: true })
-    .toFile(webPath);
+    .toBuffer();
 
-  return `/uploads/${eventId}/web/${webFilename}`;
+  // WebP on disk for gallery display
+  const webpBuffer = await sharp(jpegBuffer)
+    .webp({ quality: WEB_JPEG_QUALITY })
+    .toBuffer();
+
+  await fs.writeFile(diskPath, webpBuffer);
+
+  return { webPath: `/uploads/${eventId}/web/${webFilename}`, jpegBuffer };
 }
 
 // Removed: use the real watermark function from @/lib/watermark instead
@@ -81,30 +89,19 @@ export async function POST() {
           continue;
         }
 
-        // Generate web version
-        const webPath = await generateWebVersion(originalPath, eventId, filename);
+        // Generate web version (WebP on disk, JPEG buffer for AI)
+        const { webPath, jpegBuffer } = await generateWebVersion(originalPath, eventId, filename);
 
-        // Read web buffer for watermarking
-        const webBuffer = await fs.readFile(path.join(UPLOAD_DIR, eventId, "web", `web_${path.parse(filename).name}.jpg`));
-
-        // Generate watermarked thumbnail using the web buffer
-        const thumbnailPath = await createWatermark(eventId, webBuffer, filename);
-
-        // Run OCR on web version
-        const webFilePath = path.join(
-          UPLOAD_DIR,
-          eventId,
-          "web",
-          `web_${path.parse(filename).name}.jpg`
-        );
+        // Generate watermarked thumbnail using the JPEG buffer
+        const thumbnailPath = await createWatermark(eventId, jpegBuffer, filename);
 
         const validBibs = new Set(
           photo.event.startListEntries.map((e) => e.bibNumber)
         );
 
         console.log(`  ✓ Running OCR...`);
-        const ocrResult = await extractBibNumbers(
-          webFilePath,
+        const ocrResult = await detectTextFromImage(
+          jpegBuffer,
           validBibs.size > 0 ? validBibs : undefined
         );
 
@@ -118,7 +115,7 @@ export async function POST() {
           data: {
             webPath,
             thumbnailPath,
-            ocrProvider: ocrResult.provider,
+            ocrProvider: "ocr_aws",
           },
         });
 
@@ -132,7 +129,7 @@ export async function POST() {
                 photoId: photo.id,
                 number: bibNum,
                 confidence: ocrResult.confidence,
-                source: ocrResult.provider,
+                source: "ocr_aws",
               },
             });
           }

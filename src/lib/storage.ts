@@ -1,13 +1,9 @@
 import fs from "fs/promises";
 import path from "path";
-import sharp from "sharp";
+import sharp from "./sharp-config";
 import { v4 as uuidv4 } from "uuid";
 import { aiConfig } from "./ai-config";
 import { uploadToS3, deleteFromS3, getS3Key } from "./s3";
-
-// Optimize Sharp for low memory environments
-sharp.cache(false);
-sharp.concurrency(1);
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || "./public/uploads";
 
@@ -72,26 +68,26 @@ export async function normalizeImage(inputPath: string): Promise<Buffer> {
 
 /**
  * Generate a web-optimized version of the photo.
- * Resized to max 1600px, JPEG quality 80 → typically 200-400 KB.
- * Used for: AI pipeline (OCR, face), web gallery display.
- * IMPORTANT: Must be JPEG for AWS Rekognition compatibility (WebP not supported).
+ * Takes the original buffer directly (no disk re-read).
+ * Disk: WebP (30-40% smaller than JPEG for gallery display).
+ * Buffer: JPEG kept in memory for AWS Rekognition (WebP not supported by AWS).
  */
 async function generateWebVersion(
-  originalPath: string,
+  originalBuffer: Buffer,
   eventDir: string,
   filename: string
-): Promise<{ webFilename: string; webRelativePath: string; webBuffer: Buffer }> {
+): Promise<{ webFilename: string; webRelativePath: string; jpegBuffer: Buffer }> {
   const webDir = path.join(eventDir, "web");
   await fs.mkdir(webDir, { recursive: true });
 
-  const webFilename = `web_${path.parse(filename).name}.jpg`;
+  const webFilename = `web_${path.parse(filename).name}.webp`;
   const webPath = path.join(webDir, webFilename);
 
-  let webBuffer: Buffer;
+  let jpegBuffer: Buffer;
 
   try {
-    // Try normal processing first
-    webBuffer = await sharp(originalPath)
+    // Generate JPEG buffer for AI pipeline (AWS Rekognition requires JPEG/PNG)
+    jpegBuffer = await sharp(originalBuffer)
       .resize(WEB_MAX_DIMENSION, WEB_MAX_DIMENSION, {
         fit: "inside",
         withoutEnlargement: true,
@@ -99,17 +95,22 @@ async function generateWebVersion(
       .jpeg({ quality: WEB_JPEG_QUALITY, mozjpeg: true })
       .toBuffer();
 
-    await fs.writeFile(webPath, webBuffer);
+    // Convert to WebP for disk storage (gallery display)
+    const webpBuffer = await sharp(jpegBuffer)
+      .webp({ quality: WEB_JPEG_QUALITY })
+      .toBuffer();
+
+    await fs.writeFile(webPath, webpBuffer);
   } catch (standardError) {
     console.warn(`Standard processing failed for ${filename}:`, standardError instanceof Error ? standardError.message : standardError);
-    console.warn(`Attempting normalization...`);
+    console.warn(`Attempting normalization with file fallback...`);
 
     try {
-      // If standard processing fails, normalize the image first
-      const normalizedBuffer = await normalizeImage(originalPath);
+      // Fallback: try normalizing from the file on disk
+      const filePath = path.join(eventDir, filename);
+      const normalizedBuffer = await normalizeImage(filePath);
 
-      // Then process the normalized version
-      webBuffer = await sharp(normalizedBuffer)
+      jpegBuffer = await sharp(normalizedBuffer)
         .resize(WEB_MAX_DIMENSION, WEB_MAX_DIMENSION, {
           fit: "inside",
           withoutEnlargement: true,
@@ -117,7 +118,11 @@ async function generateWebVersion(
         .jpeg({ quality: WEB_JPEG_QUALITY, mozjpeg: true })
         .toBuffer();
 
-      await fs.writeFile(webPath, webBuffer);
+      const webpBuffer = await sharp(jpegBuffer)
+        .webp({ quality: WEB_JPEG_QUALITY })
+        .toBuffer();
+
+      await fs.writeFile(webPath, webpBuffer);
 
       console.log(`Successfully normalized and processed ${filename}`);
     } catch (normalizeError) {
@@ -131,7 +136,7 @@ async function generateWebVersion(
   return {
     webFilename,
     webRelativePath: `/uploads/${eventId}/web/${webFilename}`,
-    webBuffer, // Return buffer for immediate use (no re-read needed)
+    jpegBuffer, // JPEG buffer for AI pipeline (AWS Rekognition)
   };
 }
 
@@ -147,7 +152,7 @@ export async function saveFile(
   filename: string;
   path: string;
   webPath: string;
-  webBuffer: Buffer;
+  jpegBuffer: Buffer;
   s3Key: string | null;
 }> {
   const eventDir = await ensureUploadDir(eventId);
@@ -159,8 +164,8 @@ export async function saveFile(
   const buffer = Buffer.from(await file.arrayBuffer());
   await fs.writeFile(filePath, buffer);
 
-  // Generate web-optimized version (for AI pipeline + web display)
-  const { webRelativePath, webBuffer } = await generateWebVersion(filePath, eventDir, filename);
+  // Generate web-optimized version from buffer (no disk re-read)
+  const { webRelativePath, jpegBuffer } = await generateWebVersion(buffer, eventDir, filename);
 
   const relativePath = `/uploads/${eventId}/${filename}`;
   let s3Key: string | null = null;
@@ -177,7 +182,7 @@ export async function saveFile(
     }
   }
 
-  return { filename, path: relativePath, webPath: webRelativePath, webBuffer, s3Key };
+  return { filename, path: relativePath, webPath: webRelativePath, jpegBuffer, s3Key };
 }
 
 export async function deleteFile(relativePath: string, s3Key?: string | null): Promise<void> {
@@ -189,12 +194,12 @@ export async function deleteFile(relativePath: string, s3Key?: string | null): P
     console.error("Error deleting local file:", error);
   }
 
-  // Delete web version if it exists
+  // Delete web version if it exists (try both .webp and legacy .jpg)
   try {
     const dir = path.dirname(fullPath);
     const basename = path.parse(path.basename(fullPath)).name;
-    const webFile = path.join(dir, "web", `web_${basename}.jpg`);
-    await fs.unlink(webFile);
+    await fs.unlink(path.join(dir, "web", `web_${basename}.webp`)).catch(() => {});
+    await fs.unlink(path.join(dir, "web", `web_${basename}.jpg`)).catch(() => {});
   } catch {
     // Web version may not exist
   }

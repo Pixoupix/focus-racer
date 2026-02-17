@@ -2,14 +2,15 @@ import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 
 const PRO_ROLES = ["PHOTOGRAPHER", "ORGANIZER", "AGENCY", "CLUB", "FEDERATION"];
+const ADMIN_SLUG = "focus-mgr-7k9x";
 
 export default withAuth(
   function middleware(req) {
     const { pathname } = req.nextUrl;
     const role = req.nextauth.token?.role as string | undefined;
 
-    // Admin routes: ADMIN only
-    if (pathname.startsWith("/admin")) {
+    // Secret admin slug: ADMIN only
+    if (pathname.startsWith(`/${ADMIN_SLUG}`)) {
       if (role !== "ADMIN") {
         return NextResponse.redirect(new URL("/login", req.url));
       }
@@ -40,7 +41,8 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    "/admin/:path*",
+    // Secret admin slug
+    "/focus-mgr-7k9x/:path*",
     "/photographer/:path*",
     "/api/admin/:path*",
     "/account/:path*",

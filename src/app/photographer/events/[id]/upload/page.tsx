@@ -243,13 +243,13 @@ export default function UploadPage({
     // Generate session ID upfront so we can switch to processing immediately after upload
     const uploadSessionId = generateSessionId();
 
-    // --- Step 1: Compress images client-side ---
-    const MAX_DIM = 4000;
-    const JPEG_QUALITY = 0.90;
+    // --- Step 1: Compress images client-side (parallel pool) ---
+    const MAX_DIM = 2400; // Server resizes to 1600px anyway, HD original kept on S3
+    const JPEG_QUALITY = 0.85;
+    const PARALLEL_POOL = 4; // 4 concurrent Canvas compressions
 
     const compressImage = (file: File): Promise<File> =>
       new Promise((resolve) => {
-        // Skip non-image or already small files
         if (!file.type.startsWith("image/") || file.size < 500_000) {
           resolve(file);
           return;
@@ -259,7 +259,6 @@ export default function UploadPage({
         img.onload = () => {
           URL.revokeObjectURL(url);
           const { naturalWidth: w, naturalHeight: h } = img;
-          // No resize needed if already small
           if (w <= MAX_DIM && h <= MAX_DIM) {
             resolve(file);
             return;
@@ -280,6 +279,8 @@ export default function UploadPage({
               } else {
                 resolve(file);
               }
+              canvas.width = 0;
+              canvas.height = 0;
             },
             "image/jpeg",
             JPEG_QUALITY
@@ -294,10 +295,20 @@ export default function UploadPage({
 
     let compressed: File[];
     try {
-      const results: File[] = [];
-      for (let i = 0; i < selectedFiles.length; i++) {
-        results.push(await compressImage(selectedFiles[i].file));
-        setCompressProgress(Math.round(((i + 1) / selectedFiles.length) * 100));
+      const results: File[] = new Array(selectedFiles.length);
+      let completedCount = 0;
+
+      // Process in parallel pool of PARALLEL_POOL
+      for (let start = 0; start < selectedFiles.length; start += PARALLEL_POOL) {
+        const batch = selectedFiles.slice(start, start + PARALLEL_POOL);
+        const batchResults = await Promise.all(
+          batch.map((sf) => compressImage(sf.file))
+        );
+        batchResults.forEach((file, i) => {
+          results[start + i] = file;
+        });
+        completedCount += batch.length;
+        setCompressProgress(Math.round((completedCount / selectedFiles.length) * 100));
       }
       compressed = results;
     } catch {
@@ -308,7 +319,7 @@ export default function UploadPage({
     setUploadStep("sending");
     setUploadProgress(0);
 
-    const CHUNK_SIZE = 10; // Upload max 10 photos per request (Render CPU is slow, ~3s per photo)
+    const CHUNK_SIZE = 25; // Upload 25 photos per chunk (optimized for dedicated server)
     const chunks = [];
     for (let i = 0; i < compressed.length; i += CHUNK_SIZE) {
       chunks.push(compressed.slice(i, i + CHUNK_SIZE));
@@ -332,7 +343,7 @@ export default function UploadPage({
           });
 
           const xhr = new XMLHttpRequest();
-          xhr.timeout = 300000; // 5 minutes per chunk (Render free tier CPU is slow)
+          xhr.timeout = 300000; // 5 minutes per chunk
 
           xhr.upload.onprogress = (e) => {
             if (e.lengthComputable) {

@@ -361,6 +361,15 @@ model MarketplaceApplication {
   @@index([status])
 }
 
+// =========== PLATFORM SETTINGS ===========
+
+model PlatformSettings {
+  id               String   @id @default("default")
+  watermarkPath    String?
+  watermarkOpacity Float    @default(0.3)
+  updatedAt        DateTime @updatedAt
+}
+
 model MarketplaceReview {
   id         String   @id @default(cuid())
   authorId   String

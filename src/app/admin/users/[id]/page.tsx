@@ -133,7 +133,7 @@ export default function AdminUserDetailPage({
   return (
     <div className="animate-fade-in">
       <Link
-        href="/admin/users"
+        href="/focus-mgr-7k9x/users"
         className="text-emerald hover:text-emerald-dark hover:underline mb-4 inline-block transition-colors duration-200"
       >
         &larr; Retour a la liste

@@ -29,7 +29,7 @@ services:
     restart: unless-stopped
     environment:
       # Database
-      DATABASE_URL: postgresql://postgres:${DB_PASSWORD}@postgres:5432/focusracer?schema=public
+      DATABASE_URL: postgresql://postgres:${DB_PASSWORD}@postgres:5432/focusracer?schema=public&connection_limit=40
 
       # NextAuth
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
@@ -58,16 +58,17 @@ services:
       AWS_S3_BUCKET: ${AWS_S3_BUCKET}
       AWS_CLOUDFRONT_URL: ${AWS_CLOUDFRONT_URL:-}
 
-      # AI Config (optimized for 8-core server)
+      # AI Config (optimized for 16-core dedicated server)
       AI_OCR_CONFIDENCE_THRESHOLD: ${AI_OCR_CONFIDENCE_THRESHOLD:-70}
       AI_QUALITY_THRESHOLD: ${AI_QUALITY_THRESHOLD:-30}
       AI_AUTO_EDIT_ENABLED: ${AI_AUTO_EDIT_ENABLED:-true}
       AI_FACE_INDEX_ENABLED: ${AI_FACE_INDEX_ENABLED:-true}
       AI_LABEL_DETECTION_ENABLED: ${AI_LABEL_DETECTION_ENABLED:-true}
-      AI_MAX_CONCURRENT: ${AI_MAX_CONCURRENT:-8}
+      AI_MAX_CONCURRENT: ${AI_MAX_CONCURRENT:-16}
 
-      # Node.js (optimized for 64GB RAM)
-      NODE_OPTIONS: --max-old-space-size=8192
+      # Node.js (optimized for 16-core / 64GB dedicated server)
+      NODE_OPTIONS: --max-old-space-size=16384 --expose-gc
+      UV_THREADPOOL_SIZE: "16"
       NODE_ENV: production
     volumes:
       - ./public/uploads:/app/public/uploads

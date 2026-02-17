@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { rateLimit } from "@/lib/rate-limit";
 
 // Search photos by runner name (via start-list)
 export async function GET(request: NextRequest) {
+  // Rate limit: 30 searches/minute per IP
+  const limited = rateLimit(request, "photo-search", { limit: 30 });
+  if (limited) return limited;
   const { searchParams } = new URL(request.url);
   const eventId = searchParams.get("eventId");
   const name = searchParams.get("name");

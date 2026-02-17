@@ -40,10 +40,10 @@ export default function LegalPage() {
               <CardContent className="prose prose-gray max-w-none">
                 <p className="text-navy/80">
                   Le site Focus Racer est heberge par :<br />
-                  <strong>Vercel Inc.</strong><br />
-                  340 S Lemon Ave #4133<br />
-                  Walnut, CA 91789<br />
-                  United States
+                  <strong>OVHcloud</strong><br />
+                  2 Rue Kellermann<br />
+                  59100 Roubaix, France<br />
+                  SAS au capital de 10 174 560 euros
                 </p>
               </CardContent>
             </Card>
@@ -123,6 +123,110 @@ export default function LegalPage() {
                 <p className="text-navy/80">
                   Les donnees collectees sont utilisees uniquement pour le fonctionnement du
                   service et ne sont jamais vendues a des tiers.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="glass-card rounded-2xl" id="protection-photos">
+              <CardHeader>
+                <CardTitle className="text-navy">Protection des photos et droits d&apos;auteur</CardTitle>
+              </CardHeader>
+              <CardContent className="prose prose-gray max-w-none space-y-4">
+                <h4 className="text-navy font-semibold">1. Droits d&apos;auteur</h4>
+                <p className="text-navy/80">
+                  Toutes les photographies publiees sur Focus Racer sont protegees par le droit d&apos;auteur
+                  (articles L111-1 et suivants du Code de la propriete intellectuelle). Elles appartiennent
+                  exclusivement aux photographes qui les ont publiees.
+                </p>
+                <p className="text-navy/80">
+                  Toute reproduction, representation, modification, publication, adaptation de tout ou
+                  partie des photographies, quel que soit le moyen ou le procede utilise, est interdite,
+                  sauf autorisation ecrite prealable du photographe titulaire des droits.
+                </p>
+
+                <h4 className="text-navy font-semibold">2. Mesures de protection techniques</h4>
+                <p className="text-navy/80">
+                  Les photographies affichees sur la plateforme sont protegees par des mesures techniques
+                  conformement a l&apos;article L331-5 du Code de la propriete intellectuelle :
+                </p>
+                <ul className="text-navy/80 list-disc pl-6 space-y-1">
+                  <li>Filigrane (watermark) visible sur toutes les photos en consultation</li>
+                  <li>Resolution reduite (les originaux en haute definition ne sont accessibles qu&apos;apres achat)</li>
+                  <li>Protection contre le telechargement non autorise</li>
+                  <li>Protection contre l&apos;integration sur des sites tiers (hotlink)</li>
+                  <li>Limitation de debit pour prevenir le telechargement automatise</li>
+                </ul>
+                <p className="text-navy/80">
+                  Le contournement de ces mesures de protection est interdit et passible de sanctions
+                  penales (article L335-3-1 du Code de la propriete intellectuelle : 3 750 euros d&apos;amende).
+                </p>
+
+                <h4 className="text-navy font-semibold">3. Licence d&apos;utilisation</h4>
+                <p className="text-navy/80">
+                  L&apos;achat d&apos;une photo sur Focus Racer confere a l&apos;acheteur une licence d&apos;utilisation
+                  personnelle et non exclusive. Cette licence autorise :
+                </p>
+                <ul className="text-navy/80 list-disc pl-6 space-y-1">
+                  <li>L&apos;impression pour un usage personnel (albums, tirages, cadres)</li>
+                  <li>Le partage sur les reseaux sociaux personnels avec mention du photographe</li>
+                  <li>L&apos;utilisation dans un contexte prive et non commercial</li>
+                </ul>
+                <p className="text-navy/80">
+                  Sont explicitement interdits : la revente, la redistribution, l&apos;utilisation commerciale
+                  (publicite, presse, merchandising), la modification des metadonnees ou la suppression
+                  du credit photographe.
+                </p>
+
+                <h4 className="text-navy font-semibold">4. Sanctions</h4>
+                <p className="text-navy/80">
+                  Toute utilisation non autorisee constitue une contrefacon sanctionnee par les
+                  articles L335-2 et suivants du Code de la propriete intellectuelle (jusqu&apos;a 300 000
+                  euros d&apos;amende et 3 ans d&apos;emprisonnement).
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="glass-card rounded-2xl" id="dmca">
+              <CardHeader>
+                <CardTitle className="text-navy">Procedure de signalement (DMCA / retrait)</CardTitle>
+              </CardHeader>
+              <CardContent className="prose prose-gray max-w-none space-y-4">
+                <p className="text-navy/80">
+                  Si vous constatez qu&apos;une photographie vous appartenant est utilisee sur un site
+                  tiers sans votre autorisation, ou si vous souhaitez signaler une violation de droits
+                  d&apos;auteur, veuillez nous contacter.
+                </p>
+
+                <h4 className="text-navy font-semibold">Pour les photographes</h4>
+                <p className="text-navy/80">
+                  Si vous decouvrez que vos photos Focus Racer sont reproduites illegalement sur un
+                  autre site, envoyez-nous les elements suivants a <strong>dmca@focusracer.com</strong> :
+                </p>
+                <ul className="text-navy/80 list-disc pl-6 space-y-1">
+                  <li>Votre identite et vos coordonnees</li>
+                  <li>L&apos;URL de votre photo originale sur Focus Racer</li>
+                  <li>L&apos;URL du site contrevenant</li>
+                  <li>Une capture d&apos;ecran de la violation</li>
+                  <li>Une declaration sur l&apos;honneur que vous etes titulaire des droits</li>
+                </ul>
+                <p className="text-navy/80">
+                  Nous adresserons une mise en demeure au site contrevenant sous 48 heures ouvrees.
+                </p>
+
+                <h4 className="text-navy font-semibold">Pour les tiers</h4>
+                <p className="text-navy/80">
+                  Si vous estimez qu&apos;un contenu publie sur Focus Racer porte atteinte a vos droits,
+                  envoyez une notification a <strong>dmca@focusracer.com</strong> comprenant :
+                </p>
+                <ul className="text-navy/80 list-disc pl-6 space-y-1">
+                  <li>L&apos;identification precise du contenu litigieux (URL)</li>
+                  <li>La justification de vos droits sur ce contenu</li>
+                  <li>Vos coordonnees completes</li>
+                </ul>
+                <p className="text-navy/80">
+                  Conformement a l&apos;article 6-I-5 de la loi pour la confiance dans l&apos;economie numerique
+                  (LCEN), nous procederons au retrait du contenu litigieux dans les meilleurs delais
+                  apres verification de votre demande.
                 </p>
               </CardContent>
             </Card>

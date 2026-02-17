@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -13,6 +13,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Search, Trash2, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+const PHOTOS_PER_PAGE = 120;
 
 interface BibNumber {
   id: string;
@@ -54,6 +56,8 @@ export default function EventPhotosPage({
   const [isAddingBib, setIsAddingBib] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxPhoto, setLightboxPhoto] = useState<Photo | null>(null);
+  const [visibleCount, setVisibleCount] = useState(PHOTOS_PER_PAGE);
+  const gridSentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -79,6 +83,27 @@ export default function EventPhotosPage({
       fetchEvent();
     }
   }, [id, status]);
+
+  // Reset visible count when filter changes
+  useEffect(() => {
+    setVisibleCount(PHOTOS_PER_PAGE);
+  }, [searchBib, showOrphanOnly]);
+
+  // Progressive rendering: load more photos as user scrolls
+  const loadMoreVisible = useCallback(() => {
+    setVisibleCount((prev) => prev + PHOTOS_PER_PAGE);
+  }, []);
+
+  useEffect(() => {
+    const el = gridSentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) loadMoreVisible(); },
+      { rootMargin: "600px" }
+    );
+    observer.observe(el);
+    return () => observer.unobserve(el);
+  }, [loadMoreVisible]);
 
   const handleDeletePhoto = async (photoId: string) => {
     if (!confirm("Voulez-vous vraiment supprimer cette photo ?")) {
@@ -264,8 +289,9 @@ export default function EventPhotosPage({
             </CardContent>
           </Card>
         ) : (
+          <>
           <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2">
-            {filteredPhotos.map((photo) => (
+            {filteredPhotos.slice(0, visibleCount).map((photo) => (
               <div
                 key={photo.id}
                 className="group relative aspect-square bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-slate-200 cursor-pointer"
@@ -273,12 +299,12 @@ export default function EventPhotosPage({
               >
                 {/* Photo */}
                 <Image
-                  src={photo.thumbnailPath || photo.webPath || photo.path}
+                  src={photo.thumbnailPath ? photo.thumbnailPath.replace("wm_", "micro_") : (photo.webPath || photo.path)}
                   alt={photo.originalName}
                   fill
                   className="object-cover"
                   sizes="100px"
-                  unoptimized
+                  loading="lazy"
                 />
 
                 {/* Overlay on hover */}
@@ -342,6 +368,15 @@ export default function EventPhotosPage({
               </div>
             ))}
           </div>
+          {/* Progressive rendering sentinel */}
+          {filteredPhotos.length > visibleCount && (
+            <div ref={gridSentinelRef} className="flex justify-center py-6">
+              <p className="text-sm text-muted-foreground">
+                {visibleCount} / {filteredPhotos.length} photos affichees
+              </p>
+            </div>
+          )}
+          </>
         )}
 
         {/* Add Bib Dialog */}
@@ -414,7 +449,8 @@ export default function EventPhotosPage({
                     alt={lightboxPhoto.originalName}
                     fill
                     className="object-contain"
-                    unoptimized
+                    sizes="(max-width: 1280px) 90vw, 1200px"
+                    priority
                   />
                 </div>
               )}

@@ -30,7 +30,7 @@ export default function Header() {
   }, [pathname]);
 
   const dashboardHref = session?.user?.role === "ADMIN"
-    ? "/admin/dashboard"
+    ? "/focus-mgr-7k9x/dashboard"
     : "/photographer/dashboard";
 
   return (

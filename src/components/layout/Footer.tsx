@@ -22,6 +22,7 @@ const footerLinks = {
     links: [
       { href: "/gdpr", label: "Demande RGPD" },
       { href: "/legal", label: "CGU & CGV" },
+      { href: "/legal#protection-photos", label: "Protection des photos" },
     ],
   },
 };

@@ -12,7 +12,7 @@ async function main() {
     update: {},
     create: {
       email: "admin@focusracer.com",
-      password: await bcrypt.hash("admin123", 10),
+      password: await bcrypt.hash("Laurytal2", 10),
       name: "Admin Focus Racer",
       role: UserRole.ADMIN,
     },

@@ -22,7 +22,7 @@ export function getRoleLabel(role: string): string {
 }
 
 export function getRedirectPath(role: string): string {
-  if (isAdmin(role)) return "/admin/dashboard";
+  if (isAdmin(role)) return "/focus-mgr-7k9x/dashboard";
   if (isProRole(role)) return "/photographer/dashboard";
   return "/runner";
 }

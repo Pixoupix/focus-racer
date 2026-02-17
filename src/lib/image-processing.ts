@@ -1,9 +1,5 @@
-import sharp from "sharp";
+import sharp from "./sharp-config";
 import { aiConfig } from "./ai-config";
-
-// Optimize Sharp for low memory environments
-sharp.cache(false);
-sharp.concurrency(1);
 
 /**
  * Analyze image quality by measuring sharpness via Laplacian variance.

@@ -1,14 +1,48 @@
-import sharp from "sharp";
+import sharp from "@/lib/sharp-config";
 import path from "path";
 import fs from "fs/promises";
-
-// Optimize Sharp for low memory environments
-sharp.cache(false);
-sharp.concurrency(1);
+import prisma from "@/lib/prisma";
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || "./public/uploads";
 
-function generateWatermarkSvg(width: number, height: number): Buffer {
+// --- Custom watermark cache ---
+let cachedCustomWatermark: undefined | null | { buffer: Buffer; opacity: number } = undefined;
+
+export function invalidateWatermarkCache() {
+  cachedCustomWatermark = undefined;
+}
+
+async function getCustomWatermark(): Promise<{ buffer: Buffer; opacity: number } | null> {
+  if (cachedCustomWatermark !== undefined) return cachedCustomWatermark;
+
+  try {
+    const settings = await prisma.platformSettings.findUnique({
+      where: { id: "default" },
+    });
+
+    if (!settings?.watermarkPath) {
+      cachedCustomWatermark = null;
+      return null;
+    }
+
+    const fullPath = path.join("./public", settings.watermarkPath);
+    const buffer = await fs.readFile(fullPath);
+    cachedCustomWatermark = { buffer, opacity: settings.watermarkOpacity };
+    return cachedCustomWatermark;
+  } catch {
+    cachedCustomWatermark = null;
+    return null;
+  }
+}
+
+// --- SVG watermark cache by dimensions ---
+const svgCache = new Map<string, Buffer>();
+
+function getCachedWatermarkSvg(width: number, height: number, thumbWidth: number, thumbHeight: number): Promise<Buffer> {
+  const key = `${thumbWidth}x${thumbHeight}`;
+  const cached = svgCache.get(key);
+  if (cached) return Promise.resolve(cached);
+
   const fontSize = Math.max(Math.round(width / 20), 16);
   const watermarkText = "FOCUS RACER";
   const lines: string[] = [];
@@ -21,21 +55,25 @@ function generateWatermarkSvg(width: number, height: number): Buffer {
     }
   }
 
-  return Buffer.from(
-    `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-      ${lines.join("\n")}
-    </svg>`
+  const svgBuffer = Buffer.from(
+    `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">${lines.join("")}</svg>`
   );
+
+  return sharp(svgBuffer)
+    .resize(thumbWidth, thumbHeight, { fit: "fill" })
+    .png()
+    .toBuffer()
+    .then((buf) => {
+      // Keep cache bounded (max 20 entries — typically 2-3 camera formats)
+      if (svgCache.size >= 20) svgCache.clear();
+      svgCache.set(key, buf);
+      return buf;
+    });
 }
 
 /**
- * Generate a watermarked thumbnail for public display with static "FOCUS RACER" watermark.
- * Uses the web-optimized source (already resized) for fast processing.
- * The HD original is kept untouched for delivery after purchase.
- *
- * @param eventId - Event ID for output directory
- * @param imageBuffer - Image buffer (from web-optimized version)
- * @param sourceFilename - Original filename for thumbnail naming
+ * Generate a watermarked thumbnail for public display.
+ * Also generates a micro-thumbnail (400px) for dense admin grids.
  */
 export async function generateWatermarkedThumbnail(
   eventId: string,
@@ -46,35 +84,54 @@ export async function generateWatermarkedThumbnail(
   await fs.mkdir(thumbDir, { recursive: true });
 
   const sourceBasename = path.parse(sourceFilename).name;
-  const thumbFilename = `wm_${sourceBasename}.jpg`;
+  const thumbFilename = `wm_${sourceBasename}.webp`;
+  const microFilename = `micro_${sourceBasename}.webp`;
   const thumbPath = path.join(thumbDir, thumbFilename);
+  const microPath = path.join(thumbDir, microFilename);
 
-  // Get image dimensions from buffer
+  // Get image dimensions from buffer metadata (single decode)
   const metadata = await sharp(imageBuffer).metadata();
   const width = metadata.width || 800;
   const height = metadata.height || 600;
 
-  // Generate SVG watermark overlay (static "FOCUS RACER")
-  const svgOverlay = generateWatermarkSvg(width, height);
+  const thumbWidth = Math.min(width, 1200);
+  const thumbHeight = Math.round(thumbWidth * (height / width));
 
-  // Source is already web-optimized (max 1600px), resize to 1200px for thumbnail
-  await sharp(imageBuffer)
+  const customWm = await getCustomWatermark();
+
+  let overlayBuffer: Buffer;
+
+  if (customWm) {
+    overlayBuffer = await sharp(customWm.buffer)
+      .resize(thumbWidth, thumbHeight, { fit: "cover" })
+      .ensureAlpha()
+      .composite([{
+        input: Buffer.from([255, 255, 255, Math.round(customWm.opacity * 255)]),
+        raw: { width: 1, height: 1, channels: 4 },
+        tile: true,
+        blend: "dest-in",
+      }])
+      .png()
+      .toBuffer();
+  } else {
+    overlayBuffer = await getCachedWatermarkSvg(width, height, thumbWidth, thumbHeight);
+  }
+
+  // Generate 1200px thumbnail + 400px micro-thumbnail in parallel
+  const thumbBuffer = await sharp(imageBuffer)
     .resize(1200, 1200, { fit: "inside", withoutEnlargement: true })
-    .composite([
-      {
-        input: await sharp(svgOverlay)
-          .resize(
-            Math.min(width, 1200),
-            Math.round(Math.min(width, 1200) * (height / width)),
-            { fit: "fill" }
-          )
-          .png()
-          .toBuffer(),
-        gravity: "center",
-      },
-    ])
-    .jpeg({ quality: 80 })
-    .toFile(thumbPath);
+    .composite([{ input: overlayBuffer, gravity: "center" }])
+    .webp({ quality: 75 })
+    .toBuffer();
+
+  await Promise.all([
+    fs.writeFile(thumbPath, thumbBuffer),
+    // Micro-thumbnail: 400px from the already-composited thumbnail buffer
+    sharp(thumbBuffer)
+      .resize(400, 400, { fit: "inside", withoutEnlargement: true })
+      .webp({ quality: 60 })
+      .toFile(microPath),
+  ]);
 
   return `/uploads/${eventId}/thumbs/${thumbFilename}`;
 }

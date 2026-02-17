@@ -10,8 +10,8 @@ focusracer.swipego.app {
         header_up X-Forwarded-Proto {scheme}
     }
 
-    # Enable gzip compression
-    encode gzip
+    # Enable Brotli + gzip compression (Brotli ~15-20% smaller)
+    encode zstd br gzip
 
     # Security headers
     header {
@@ -21,9 +21,20 @@ focusracer.swipego.app {
         X-Content-Type-Options "nosniff"
         # Referrer policy
         Referrer-Policy "strict-origin-when-cross-origin"
+        # Permissions policy — block camera/mic/geolocation
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
         # Remove server header
         -Server
     }
+
+    # Hotlink protection: block external sites from embedding our images
+    @hotlink {
+        path /api/uploads/* /_next/image*
+        not header Referer *focusracer.swipego.app*
+        not header Referer *localhost*
+        not header Referer ""
+    }
+    respond @hotlink 403
 
     # Large upload support (for photo batches)
     request_body {

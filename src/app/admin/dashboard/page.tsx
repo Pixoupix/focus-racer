@@ -189,7 +189,7 @@ export default function AdminDashboardPage() {
         <Card className="glass-card">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-navy">Dernières commandes</CardTitle>
-            <Link href="/admin/payments" className="text-sm text-emerald hover:text-emerald-dark transition-colors">
+            <Link href="/focus-mgr-7k9x/payments" className="text-sm text-emerald hover:text-emerald-dark transition-colors">
               Voir tout
             </Link>
           </CardHeader>
@@ -231,7 +231,7 @@ export default function AdminDashboardPage() {
         <Card className="glass-card">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-navy">Utilisateurs par rôle</CardTitle>
-            <Link href="/admin/users" className="text-sm text-emerald hover:text-emerald-dark transition-colors">
+            <Link href="/focus-mgr-7k9x/users" className="text-sm text-emerald hover:text-emerald-dark transition-colors">
               Gérer
             </Link>
           </CardHeader>
@@ -250,7 +250,7 @@ export default function AdminDashboardPage() {
 
       {/* Quick links */}
       <div className="mb-8">
-        <Link href="/admin/gdpr" className="text-sm text-emerald hover:text-emerald-dark transition-colors">
+        <Link href="/focus-mgr-7k9x/gdpr" className="text-sm text-emerald hover:text-emerald-dark transition-colors">
           RGPD - Demandes de données
         </Link>
       </div>

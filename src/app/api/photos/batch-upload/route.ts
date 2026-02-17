@@ -13,18 +13,14 @@ import {
   createUploadSession,
   updateUploadProgress,
 } from "@/lib/upload-session";
-import sharp from "sharp";
-
-// Optimize Sharp for low memory environments (Render 512MB)
-sharp.cache(false); // Disable cache to free memory immediately
-sharp.concurrency(1); // Process one image at a time
+import "@/lib/sharp-config";
 
 // Max execution time for large batch uploads (10 minutes)
 export const maxDuration = 600;
 
 async function processPhotoWithProgress(
   photoId: string,
-  webBuffer: Buffer,
+  jpegBuffer: Buffer,
   originalFilename: string,
   eventId: string,
   sessionId: string,
@@ -49,51 +45,30 @@ async function processPhotoWithProgress(
       processedAt: new Date(),
     };
 
-    // 1. Quality analysis
     updateUploadProgress(sessionId, {
-      currentStep: `Analyse qualite ${label}`,
+      currentStep: `Traitement photo ${label}`,
     });
 
-    const quality = await analyzeQuality(webBuffer);
+    // All 4 operations are independent: they read jpegBuffer (JPEG for AWS compatibility)
+    // and write to different outputs. Run them in parallel for ~27% speedup.
+    const [quality, thumbnailPath, ocrResult, faces] = await Promise.all([
+      analyzeQuality(jpegBuffer),
+      generateWatermarkedThumbnail(eventId, jpegBuffer, originalFilename)
+        .catch((err) => { console.error(`[Batch] Watermark error for ${photoId}:`, err); return null; }),
+      detectTextFromImage(jpegBuffer, validBibs),
+      (processingMode === "premium" && aiConfig.faceIndexEnabled)
+        ? indexFaces(jpegBuffer, `${eventId}:${photoId}`).catch((err) => {
+            console.error(`[Batch] Face indexing error for ${photoId}:`, err);
+            return [] as Array<{ faceId: string; confidence: number; boundingBox: unknown }>;
+          })
+        : Promise.resolve(undefined),
+    ]);
+
     photoData.qualityScore = quality.score;
     photoData.isBlurry = quality.isBlurry;
-
-    // 2. Watermark (static "FOCUS RACER")
-    updateUploadProgress(sessionId, {
-      currentStep: `Watermark ${label}`,
-    });
-
-    try {
-      const thumbnailPath = await generateWatermarkedThumbnail(
-        eventId,
-        webBuffer,
-        originalFilename
-      );
+    if (thumbnailPath) {
       photoData.thumbnailPath = thumbnailPath;
-    } catch (err) {
-      console.error(`[Batch] Watermark error for ${photoId}:`, err);
     }
-
-    updateUploadProgress(sessionId, {
-      currentStep: `Analyse IA ${label}`,
-    });
-
-    // 3. Parallel AWS calls (OCR + Faces if premium)
-    const ocrPromise = detectTextFromImage(webBuffer, validBibs);
-
-    // Face indexing only in premium mode
-    let facesPromise: Promise<Array<{ faceId: string; confidence: number; boundingBox: unknown }>> | undefined;
-    if (processingMode === "premium" && aiConfig.faceIndexEnabled) {
-      facesPromise = indexFaces(webBuffer, `${eventId}:${photoId}`).catch((err) => {
-        console.error(`[Batch] Face indexing error for ${photoId}:`, err);
-        return [];
-      });
-    }
-
-    const [ocrResult, faces] = await Promise.all([
-      ocrPromise,
-      facesPromise || Promise.resolve(undefined),
-    ]);
 
     // Process OCR results
     photoData.ocrProvider = "ocr_aws";
@@ -137,7 +112,7 @@ async function processPhotoWithProgress(
 
       try {
         // Search for matching faces in the collection
-        const faceMatches = await searchFaceByImage(webBuffer, 10, 85);
+        const faceMatches = await searchFaceByImage(jpegBuffer, 10, 85);
 
         if (faceMatches.length > 0) {
           // Extract photoIds from externalImageId (format: "eventId:photoId")
@@ -359,12 +334,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Save all files in parallel (with limited concurrency to avoid timeout)
-    const photos: { id: string; webBuffer: Buffer; originalName: string; index: number }[] = [];
+    const photos: { id: string; jpegBuffer: Buffer; originalName: string; index: number }[] = [];
     const failedFiles: string[] = [];
 
-    // Process files in batches of 5 to stay under Cloudflare 100s timeout
-    // With chunked upload from client (10 photos/chunk), each chunk processes 2 batches
-    const BATCH_SIZE = 5;
+    // Process files in batches (Caddy direct, no Cloudflare timeout constraint)
+    const BATCH_SIZE = 15;
     for (let batchStart = 0; batchStart < files.length; batchStart += BATCH_SIZE) {
       const batch = files.slice(batchStart, batchStart + BATCH_SIZE);
       const batchPromises = batch.map(async (file, batchIndex) => {
@@ -374,7 +348,7 @@ export async function POST(request: NextRequest) {
         });
 
         try {
-          const { filename, path, webPath, webBuffer, s3Key } = await saveFile(file, eventId);
+          const { filename, path, webPath, jpegBuffer, s3Key } = await saveFile(file, eventId);
 
           const photo = await prisma.photo.create({
             data: {
@@ -388,7 +362,7 @@ export async function POST(request: NextRequest) {
             },
           });
 
-          return { id: photo.id, webBuffer, originalName: file.name, index: fileIndex };
+          return { id: photo.id, jpegBuffer, originalName: file.name, index: fileIndex };
         } catch (saveError) {
           console.error(`Failed to save file ${file.name}:`, saveError);
           return { error: file.name };
@@ -403,10 +377,10 @@ export async function POST(request: NextRequest) {
           const value = result.value;
           if ("error" in value && value.error) {
             failedFiles.push(value.error);
-          } else if ("id" in value && value.id && value.webBuffer && typeof value.index === "number") {
+          } else if ("id" in value && value.id && value.jpegBuffer && typeof value.index === "number") {
             photos.push({
               id: value.id,
-              webBuffer: value.webBuffer,
+              jpegBuffer: value.jpegBuffer,
               originalName: value.originalName,
               index: value.index
             });
@@ -436,7 +410,7 @@ export async function POST(request: NextRequest) {
         try {
           await processPhotoWithProgress(
             photo.id,
-            photo.webBuffer,
+            photo.jpegBuffer,
             photo.originalName,
             eventId,
             sessionId,

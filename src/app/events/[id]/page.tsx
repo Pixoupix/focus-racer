@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import ProtectedImage from "@/components/protected-image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +41,8 @@ interface PublicEvent {
   photoCount: number;
   runnerCount: number;
   photos: PublicPhoto[];
+  nextCursor: string | null;
+  hasMore: boolean;
 }
 
 interface SearchResult {
@@ -57,12 +60,14 @@ export default function PublicEventPage({
   const { id } = params;
   const [event, setEvent] = useState<PublicEvent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [viewerPhoto, setViewerPhoto] = useState<PublicPhoto | null>(null);
   const [viewerIndex, setViewerIndex] = useState(0);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem(`favorites_${id}`);
@@ -102,6 +107,39 @@ export default function PublicEventPage({
     fetchEvent();
   }, [id]);
 
+  // Infinite scroll: load more photos when sentinel enters viewport
+  const loadMorePhotos = useCallback(async () => {
+    if (!event?.nextCursor || !event.hasMore || isLoadingMore) return;
+    setIsLoadingMore(true);
+    try {
+      const res = await fetch(`/api/events/public/${id}?cursor=${event.nextCursor}`);
+      if (res.ok) {
+        const data = await res.json();
+        setEvent((prev) => prev ? {
+          ...prev,
+          photos: [...prev.photos, ...data.photos],
+          nextCursor: data.nextCursor,
+          hasMore: data.hasMore,
+        } : prev);
+      }
+    } catch (error) {
+      console.error("Error loading more photos:", error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [event?.nextCursor, event?.hasMore, isLoadingMore, id]);
+
+  useEffect(() => {
+    if (!event?.hasMore || searchResult) return;
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) loadMorePhotos(); },
+      { rootMargin: "400px" }
+    );
+    const el = loadMoreRef.current;
+    if (el) observer.observe(el);
+    return () => { if (el) observer.unobserve(el); };
+  }, [event?.hasMore, searchResult, loadMorePhotos]);
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) {
@@ -135,6 +173,17 @@ export default function PublicEventPage({
     setViewerPhoto(photo);
     setViewerIndex(index);
   };
+
+  // Prefetch adjacent images on hover for instant lightbox
+  const prefetchImage = useCallback((index: number) => {
+    const targets = [index - 1, index, index + 1];
+    for (const i of targets) {
+      if (i >= 0 && i < displayPhotos.length) {
+        const img = new window.Image();
+        img.src = displayPhotos[i].src;
+      }
+    }
+  }, [displayPhotos]);
 
   const closeViewer = () => setViewerPhoto(null);
 
@@ -182,8 +231,23 @@ export default function PublicEventPage({
   const primaryColor = event.primaryColor || "#14B8A6";
   const favCount = favorites.size;
 
+  // Block Ctrl+S / Ctrl+Shift+I / Ctrl+U on gallery (deters casual save attempts)
+  useEffect(() => {
+    const block = (e: KeyboardEvent) => {
+      if (
+        (e.ctrlKey && e.key === "s") ||
+        (e.ctrlKey && e.key === "u") ||
+        (e.ctrlKey && e.shiftKey && e.key === "I")
+      ) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener("keydown", block);
+    return () => window.removeEventListener("keydown", block);
+  }, []);
+
   return (
-    <div className="min-h-screen gradient-bg-subtle">
+    <div className="min-h-screen gradient-bg-subtle gallery-protected">
       {/* Header with branding */}
       <header className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
@@ -344,15 +408,17 @@ export default function PublicEventPage({
             </CardContent>
           </Card>
         ) : displayPhotos.length === 0 && searchResult ? null : (
+          <>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
             {displayPhotos.map((photo, index) => (
               <div
                 key={photo.id}
                 className="group relative bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-glass-lg transition-shadow cursor-pointer"
                 onClick={() => openViewer(photo, index)}
+                onMouseEnter={() => prefetchImage(index)}
               >
                 <div className="aspect-[4/3] relative">
-                  <Image
+                  <ProtectedImage
                     src={photo.src}
                     alt={photo.originalName}
                     fill
@@ -360,10 +426,9 @@ export default function PublicEventPage({
                     sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                     loading="lazy"
                   />
-                  {/* Favorite button */}
                   <button
                     onClick={(e) => { e.stopPropagation(); toggleFavorite(photo.id); }}
-                    className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/80 flex items-center justify-center hover:bg-white transition-colors"
+                    className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/80 flex items-center justify-center hover:bg-white transition-colors z-10"
                   >
                     <span className={favorites.has(photo.id) ? "text-emerald fill-emerald" : "text-muted-foreground"}>
                       {favorites.has(photo.id) ? "\u2665" : "\u2661"}
@@ -382,7 +447,28 @@ export default function PublicEventPage({
               </div>
             ))}
           </div>
+          {/* Infinite scroll sentinel */}
+          {!searchResult && event?.hasMore && (
+            <div ref={loadMoreRef} className="flex justify-center py-8">
+              {isLoadingMore ? (
+                <p className="text-muted-foreground text-sm">Chargement...</p>
+              ) : (
+                <p className="text-muted-foreground text-xs">Scroll pour plus de photos</p>
+              )}
+            </div>
+          )}
+          </>
         )}
+
+        {/* Copyright notice */}
+        <div className="mt-8 pb-4 text-center text-xs text-muted-foreground">
+          <p>
+            Photos protegees par le droit d&apos;auteur. Toute reproduction interdite.{" "}
+            <Link href="/legal#protection-photos" className="underline hover:text-navy">
+              En savoir plus
+            </Link>
+          </p>
+        </div>
       </main>
 
       {/* Photo Viewer / Lightbox */}
@@ -428,8 +514,9 @@ export default function PublicEventPage({
           <div
             className="relative max-w-[90vw] max-h-[85vh] w-full h-full"
             onClick={(e) => e.stopPropagation()}
+            onContextMenu={(e) => e.preventDefault()}
           >
-            <Image
+            <ProtectedImage
               src={viewerPhoto.src}
               alt={viewerPhoto.originalName}
               fill

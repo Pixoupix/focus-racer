@@ -43,7 +43,7 @@ export default function LoginPage() {
         const role = session?.user?.role;
 
         if (role === "ADMIN") {
-          router.push("/admin/dashboard");
+          router.push("/focus-mgr-7k9x/dashboard");
         } else if (["PHOTOGRAPHER", "ORGANIZER", "AGENCY", "CLUB", "FEDERATION"].includes(role)) {
           router.push("/photographer/dashboard");
         } else {

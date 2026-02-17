@@ -539,7 +539,17 @@ export default function AdminDataPage() {
                 <span className="truncate">{dateRangeLabel}</span>
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
+            <PopoverContent
+              className="w-auto p-0"
+              align="end"
+              onFocusOutside={(e) => e.preventDefault()}
+              onPointerDownOutside={(e) => {
+                // Allow closing by clicking outside, but not when mid-selection
+                if (dateRange?.from && !dateRange?.to) {
+                  e.preventDefault();
+                }
+              }}
+            >
               <div className="flex">
                 <div className="border-r p-3 space-y-1">
                   <p className="text-xs font-medium text-muted-foreground mb-2 px-2">Raccourcis</p>
@@ -559,8 +569,9 @@ export default function AdminDataPage() {
                     selected={dateRange}
                     onSelect={(range) => {
                       setDateRange(range);
+                      // Only close after both dates are selected
                       if (range?.from && range?.to) {
-                        setCalendarOpen(false);
+                        setTimeout(() => setCalendarOpen(false), 300);
                       }
                     }}
                     numberOfMonths={2}

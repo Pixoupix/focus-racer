@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -437,6 +436,7 @@ export default function AdminDataPage() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [activeSection, setActiveSection] = useState("users");
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const calendarRef = useRef<HTMLDivElement>(null);
   const sectionsRef = useRef<Record<string, HTMLDivElement | null>>({});
 
   const fetchData = useCallback(async () => {
@@ -470,6 +470,25 @@ export default function AdminDataPage() {
     }
     setCalendarOpen(false);
   };
+
+  // Close calendar on click outside or Escape
+  useEffect(() => {
+    if (!calendarOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (calendarRef.current && !calendarRef.current.contains(e.target as Node)) {
+        setCalendarOpen(false);
+      }
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setCalendarOpen(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [calendarOpen]);
 
   const dateRangeLabel = dateRange?.from
     ? dateRange.to
@@ -530,62 +549,50 @@ export default function AdminDataPage() {
           <span className="text-xs text-muted-foreground">
             {new Date(data.generatedAt).toLocaleString("fr-FR")}
           </span>
-          <Popover open={calendarOpen} onOpenChange={() => { /* controlled manually */ }}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="min-w-[240px] justify-start text-left font-normal"
-                onClick={() => setCalendarOpen((v) => !v)}
-              >
-                <svg className="h-4 w-4 mr-2 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                </svg>
-                <span className="truncate">{dateRangeLabel}</span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent
-              className="w-auto p-0"
-              align="end"
-              onOpenAutoFocus={(e) => e.preventDefault()}
-              onCloseAutoFocus={(e) => e.preventDefault()}
-              onFocusOutside={(e) => e.preventDefault()}
-              onInteractOutside={(e) => {
-                // Close when clicking outside the popover
-                setCalendarOpen(false);
-              }}
-              onEscapeKeyDown={() => setCalendarOpen(false)}
+          <div className="relative" ref={calendarRef}>
+            <Button
+              variant="outline"
+              className="min-w-[240px] justify-start text-left font-normal"
+              onClick={() => setCalendarOpen((v) => !v)}
             >
-              <div className="flex">
-                <div className="border-r p-3 space-y-1">
-                  <p className="text-xs font-medium text-muted-foreground mb-2 px-2">Raccourcis</p>
-                  {QUICK_RANGES.map((qr) => (
-                    <button
-                      key={qr.label}
-                      onClick={() => applyQuickRange(qr.days)}
-                      className="block w-full text-left text-sm px-3 py-1.5 rounded-md hover:bg-emerald-50 hover:text-emerald-700 transition-colors whitespace-nowrap"
-                    >
-                      {qr.label}
-                    </button>
-                  ))}
-                </div>
-                <div className="p-3">
-                  <Calendar
-                    mode="range"
-                    selected={dateRange}
-                    onSelect={(range) => {
-                      setDateRange(range);
-                      // Close only after both start AND end are picked
-                      if (range?.from && range?.to) {
-                        setTimeout(() => setCalendarOpen(false), 400);
-                      }
-                    }}
-                    numberOfMonths={2}
-                    defaultMonth={dateRange?.from || new Date()}
-                  />
+              <svg className="h-4 w-4 mr-2 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+              </svg>
+              <span className="truncate">{dateRangeLabel}</span>
+            </Button>
+            {calendarOpen && (
+              <div className="absolute right-0 top-full mt-2 z-50 rounded-lg border bg-white shadow-lg">
+                <div className="flex">
+                  <div className="border-r p-3 space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground mb-2 px-2">Raccourcis</p>
+                    {QUICK_RANGES.map((qr) => (
+                      <button
+                        key={qr.label}
+                        onClick={() => applyQuickRange(qr.days)}
+                        className="block w-full text-left text-sm px-3 py-1.5 rounded-md hover:bg-emerald-50 hover:text-emerald-700 transition-colors whitespace-nowrap"
+                      >
+                        {qr.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="p-3">
+                    <Calendar
+                      mode="range"
+                      selected={dateRange}
+                      onSelect={(range) => {
+                        setDateRange(range);
+                        if (range?.from && range?.to) {
+                          setTimeout(() => setCalendarOpen(false), 400);
+                        }
+                      }}
+                      numberOfMonths={2}
+                      defaultMonth={dateRange?.from || new Date()}
+                    />
+                  </div>
                 </div>
               </div>
-            </PopoverContent>
-          </Popover>
+            )}
+          </div>
           <Button variant="outline" size="sm" onClick={fetchData} disabled={isLoading}>
             <svg
               className={cn("h-4 w-4 mr-1", isLoading && "animate-spin")}

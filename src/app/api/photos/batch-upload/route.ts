@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { saveFile } from "@/lib/storage";
 import { generateWatermarkedThumbnail } from "@/lib/watermark";
-import { analyzeQuality } from "@/lib/image-processing";
+import { analyzeQuality, autoRetouchWebVersion, smartCropFace } from "@/lib/image-processing";
 import { aiConfig } from "@/lib/ai-config";
 import { detectTextFromImage, indexFaces, searchFaceByImage } from "@/lib/rekognition";
 import { scheduleAutoClustering } from "@/lib/auto-cluster";
@@ -28,7 +28,9 @@ async function processPhotoWithProgress(
   totalPhotos: number,
   processingMode: "lite" | "premium",
   creditsPerPhoto: number,
-  validBibs: Set<string> | undefined
+  validBibs: Set<string> | undefined,
+  options: { autoRetouch: boolean; smartCrop: boolean },
+  webPath: string | null
 ) {
   try {
     const label = `${photoIndex + 1}/${totalPhotos}`;
@@ -41,6 +43,7 @@ async function processPhotoWithProgress(
       thumbnailPath?: string;
       ocrProvider?: string;
       faceIndexed?: boolean;
+      autoEdited?: boolean;
     } = {
       processedAt: new Date(),
     };
@@ -95,6 +98,43 @@ async function processPhotoWithProgress(
         })),
       });
       photoData.faceIndexed = true;
+
+      // Smart Crop: generate individual crop per face (free, Sharp local)
+      if (options.smartCrop) {
+        const createdFaces = await prisma.photoFace.findMany({
+          where: { photoId },
+          select: { id: true, boundingBox: true },
+        });
+
+        for (let fi = 0; fi < createdFaces.length; fi++) {
+          const face = createdFaces[fi];
+          if (!face.boundingBox) continue;
+          try {
+            const bbox = JSON.parse(face.boundingBox);
+            const cropPath = await smartCropFace(jpegBuffer, eventId, photoId, fi, bbox);
+            if (cropPath) {
+              await prisma.photoFace.update({
+                where: { id: face.id },
+                data: { cropPath },
+              });
+            }
+          } catch (cropErr) {
+            console.error(`[Batch] Smart crop error for face ${fi}:`, cropErr);
+          }
+        }
+      }
+    }
+
+    // Auto-retouch: apply to web version (free, Sharp local)
+    if (options.autoRetouch && webPath) {
+      try {
+        const retouched = await autoRetouchWebVersion(webPath);
+        if (retouched) {
+          photoData.autoEdited = true;
+        }
+      } catch (retouchErr) {
+        console.error(`[Batch] Auto-retouch error for ${photoId}:`, retouchErr);
+      }
     }
 
     // 4. Single batch update to Photo
@@ -232,6 +272,9 @@ export async function POST(request: NextRequest) {
     const processingMode = (processingModeParam === "lite" || processingModeParam === "premium")
       ? processingModeParam
       : "lite"; // Default to lite
+    const autoRetouch = formData.get("autoRetouch") === "true";
+    const smartCrop = formData.get("smartCrop") === "true";
+    const processingOptions = { autoRetouch, smartCrop };
 
     if (!eventId) {
       return NextResponse.json({ error: "ID d'evenement manquant" }, { status: 400 });
@@ -334,7 +377,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Save all files in parallel (with limited concurrency to avoid timeout)
-    const photos: { id: string; jpegBuffer: Buffer; originalName: string; index: number }[] = [];
+    const photos: { id: string; jpegBuffer: Buffer; originalName: string; index: number; webPath: string | null }[] = [];
     const failedFiles: string[] = [];
 
     // Process files in batches (Caddy direct, no Cloudflare timeout constraint)
@@ -362,7 +405,7 @@ export async function POST(request: NextRequest) {
             },
           });
 
-          return { id: photo.id, jpegBuffer, originalName: file.name, index: fileIndex };
+          return { id: photo.id, jpegBuffer, originalName: file.name, index: fileIndex, webPath: webPath || null };
         } catch (saveError) {
           console.error(`Failed to save file ${file.name}:`, saveError);
           return { error: file.name };
@@ -382,7 +425,8 @@ export async function POST(request: NextRequest) {
               id: value.id,
               jpegBuffer: value.jpegBuffer,
               originalName: value.originalName,
-              index: value.index
+              index: value.index,
+              webPath: value.webPath,
             });
           }
         } else {
@@ -418,7 +462,9 @@ export async function POST(request: NextRequest) {
             nbPhotos,
             processingMode,
             creditsPerPhoto,
-            validBibs
+            validBibs,
+            processingOptions,
+            photo.webPath
           );
         } catch (err) {
           console.error(`[Batch] Unhandled error for photo ${photo.id}:`, err);

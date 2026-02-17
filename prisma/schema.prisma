@@ -164,6 +164,7 @@ model PhotoFace {
   faceId      String // AWS Rekognition FaceId
   confidence  Float?
   boundingBox String? // JSON: {left, top, width, height}
+  cropPath    String? // Smart crop path for this face
   createdAt   DateTime @default(now())
 
   @@index([photoId])

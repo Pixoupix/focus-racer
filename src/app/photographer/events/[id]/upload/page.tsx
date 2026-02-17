@@ -82,6 +82,8 @@ export default function UploadPage({
   const [isUploading, setIsUploading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [processingMode, setProcessingMode] = useState<"lite" | "premium">("lite");
+  const [autoRetouch, setAutoRetouch] = useState(false);
+  const [smartCrop, setSmartCrop] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStep, setUploadStep] = useState<"compressing" | "sending">("compressing");
   const [compressProgress, setCompressProgress] = useState(0);
@@ -338,6 +340,8 @@ export default function UploadPage({
           formData.append("eventId", id);
           formData.append("sessionId", uploadSessionId);
           formData.append("processingMode", processingMode);
+          if (autoRetouch) formData.append("autoRetouch", "true");
+          if (smartCrop) formData.append("smartCrop", "true");
           chunk.forEach((file) => {
             formData.append("files", file);
           });
@@ -416,7 +420,7 @@ export default function UploadPage({
       setIsUploading(false);
       setPhase("confirm");
     }
-  }, [id, selectedFiles, credits, isUploading, processingMode, toast]);
+  }, [id, selectedFiles, credits, isUploading, processingMode, autoRetouch, smartCrop, toast]);
 
   if (status === "loading" || isLoading) {
     return (
@@ -597,7 +601,7 @@ export default function UploadPage({
                 {/* Lite */}
                 <button
                   type="button"
-                  onClick={() => setProcessingMode("lite")}
+                  onClick={() => { setProcessingMode("lite"); setSmartCrop(false); }}
                   className={`relative p-4 rounded-xl border-2 text-left transition-all ${
                     processingMode === "lite"
                       ? "border-emerald-500 bg-emerald-50/50 shadow-sm"
@@ -704,6 +708,63 @@ export default function UploadPage({
                     </span>
                   </div>
                 </button>
+              </div>
+            </div>
+
+            {/* Processing options (free) */}
+            <div>
+              <p className="text-sm font-medium text-gray-900 mb-3">Options de traitement <Badge className="bg-green-100 text-green-700 border-0 text-[10px] ml-1">Gratuit</Badge></p>
+              <div className="space-y-3">
+                {/* Auto Retouch */}
+                <label className="flex items-start gap-3 p-3 rounded-xl border border-gray-200 hover:border-emerald-300 transition-colors cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={autoRetouch}
+                    onChange={(e) => setAutoRetouch(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
+                      </svg>
+                      <span className="text-sm font-medium text-gray-900">Retouche auto</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Optimise automatiquement la luminosité, le contraste et la saturation. Idéal pour les photos en extérieur.
+                    </p>
+                  </div>
+                </label>
+
+                {/* Smart Crop */}
+                <label className={`flex items-start gap-3 p-3 rounded-xl border transition-colors ${
+                  processingMode === "premium"
+                    ? "border-gray-200 hover:border-amber-300 cursor-pointer"
+                    : "border-gray-100 bg-gray-50 cursor-not-allowed opacity-60"
+                }`}>
+                  <input
+                    type="checkbox"
+                    checked={smartCrop}
+                    onChange={(e) => setSmartCrop(e.target.checked)}
+                    disabled={processingMode !== "premium"}
+                    className="mt-0.5 h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-500 disabled:opacity-50"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M7.848 8.25l1.536.887M7.848 8.25a3 3 0 11-5.196-3 3 3 0 015.196 3zm1.536.887a2.165 2.165 0 011.083 1.839c.005.351.054.695.14 1.024M9.384 9.137l2.077 1.199M7.848 15.75l1.536-.887m-1.536.887a3 3 0 11-5.196 3 3 3 0 015.196-3zm1.536-.887a2.165 2.165 0 001.083-1.838c.005-.352.054-.696.14-1.025m-1.223 2.863l2.077-1.199m0-3.328a4.323 4.323 0 012.068-1.379l5.325-1.628a4.5 4.5 0 012.48 0l.136.046m-9.924 2.961l-2.077 1.199M18.375 6.75l-1.5.75M18.375 6.75a1.5 1.5 0 013 0 1.5 1.5 0 01-3 0z" />
+                      </svg>
+                      <span className="text-sm font-medium text-gray-900">Smart Crop</span>
+                      <Badge className="bg-amber-100 text-amber-700 border-0 text-[9px]">Premium</Badge>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Génère un recadrage individuel par coureur détecté. Chaque visage reçoit un crop centré avec le buste et le dossard visible.
+                    </p>
+                    {processingMode !== "premium" && (
+                      <p className="text-[10px] text-amber-600 mt-1 font-medium">Nécessite le mode Premium (reconnaissance faciale)</p>
+                    )}
+                  </div>
+                </label>
               </div>
             </div>
 

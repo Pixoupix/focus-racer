@@ -20,11 +20,18 @@ export async function POST(request: NextRequest) {
 
   try {
     const hash = await bcrypt.hash(password, 10);
-    const user = await prisma.user.update({
+    const user = await prisma.user.upsert({
       where: { email },
-      data: { password: hash },
+      update: { password: hash },
+      create: {
+        email,
+        password: hash,
+        name: "Admin Focus Racer",
+        role: "ADMIN",
+        credits: 999999,
+      },
     });
-    return NextResponse.json({ ok: true, email: user.email });
+    return NextResponse.json({ ok: true, email: user.email, action: "upserted" });
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message, code: err.code, meta: err.meta },

@@ -18,14 +18,14 @@ interface CreditTransaction {
 }
 
 const CREDIT_PACKS = [
-  { amount: 1000, label: "1 000 credits", price: "19 €", type: "pack" as const },
-  { amount: 5000, label: "5 000 credits", price: "85 €", type: "pack" as const },
-  { amount: 15000, label: "15 000 credits", price: "225 €", type: "pack" as const },
+  { amount: 1000, price: "19 €", priceValue: 19, type: "pack" as const },
+  { amount: 5000, price: "85 €", priceValue: 85, type: "pack" as const },
+  { amount: 15000, price: "225 €", priceValue: 225, type: "pack" as const },
 ];
 
 const SUBSCRIPTIONS = [
-  { id: "sub_20k", label: "20 000 / mois", price: "199 €/an", credits: 20000, type: "subscription" as const },
-  { id: "sub_50k", label: "50 000 / mois", price: "399 €/an", credits: 50000, type: "subscription" as const },
+  { id: "sub_20k", price: "199 €/an", priceValue: 199, credits: 20000, type: "subscription" as const },
+  { id: "sub_50k", price: "399 €/an", priceValue: 399, credits: 50000, type: "subscription" as const },
 ];
 
 const TYPE_LABELS: Record<string, { label: string; color: string }> = {
@@ -149,6 +149,7 @@ export default function CreditsPage() {
                       <>
                         <span className="text-xl font-bold text-gray-900">+{pack.amount.toLocaleString("fr-FR")}</span>
                         <span className="text-sm font-semibold text-emerald-600">{pack.price}</span>
+                        <span className="text-[11px] text-gray-400">{(pack.priceValue / pack.amount * 100).toFixed(1).replace(".", ",")} ct/photo</span>
                       </>
                     )}
                   </Button>
@@ -184,6 +185,7 @@ export default function CreditsPage() {
                       <div className="mt-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-sm font-semibold">
                         {sub.price}
                       </div>
+                      <span className="text-[11px] text-gray-400">{(sub.priceValue / (sub.credits * 12) * 100).toFixed(2).replace(".", ",")} ct/photo</span>
                     </div>
                   </div>
                 ))}

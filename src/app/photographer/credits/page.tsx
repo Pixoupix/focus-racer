@@ -18,10 +18,14 @@ interface CreditTransaction {
 }
 
 const CREDIT_PACKS = [
-  { amount: 50, label: "50 credits", price: "4,90 €" },
-  { amount: 100, label: "100 credits", price: "8,90 €" },
-  { amount: 250, label: "250 credits", price: "19,90 €" },
-  { amount: 500, label: "500 credits", price: "34,90 €" },
+  { amount: 1000, label: "1 000 credits", price: "19 €", type: "pack" as const },
+  { amount: 5000, label: "5 000 credits", price: "85 €", type: "pack" as const },
+  { amount: 15000, label: "15 000 credits", price: "225 €", type: "pack" as const },
+];
+
+const SUBSCRIPTIONS = [
+  { id: "sub_20k", label: "20 000 / mois", price: "199 €/an", credits: 20000, type: "subscription" as const },
+  { id: "sub_50k", label: "50 000 / mois", price: "399 €/an", credits: 50000, type: "subscription" as const },
 ];
 
 const TYPE_LABELS: Record<string, { label: string; color: string }> = {
@@ -118,21 +122,21 @@ export default function CreditsPage() {
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          {/* Recharge */}
+          {/* Packs credits */}
           <Card className="bg-white border-0 shadow-card rounded-xl">
             <CardHeader>
-              <CardTitle className="text-lg font-display text-gray-900">Acheter des credits</CardTitle>
+              <CardTitle className="text-lg font-display text-gray-900">Packs credits</CardTitle>
               <CardDescription className="text-gray-500">
                 1 credit = 1 photo importee. Credits rembourses si aucun dossard detecte.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 {CREDIT_PACKS.map((pack) => (
                   <Button
                     key={pack.amount}
                     variant="outline"
-                    className="h-auto py-4 flex flex-col gap-1 border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 rounded-xl transition-all"
+                    className="h-auto py-5 flex flex-col gap-1.5 border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 rounded-xl transition-all"
                     onClick={() => buyCredits(pack.amount)}
                     disabled={loadingPack !== null}
                   >
@@ -143,15 +147,49 @@ export default function CreditsPage() {
                       </svg>
                     ) : (
                       <>
-                        <span className="text-xl font-bold text-gray-900">+{pack.amount}</span>
-                        <span className="text-xs text-gray-500">{pack.price}</span>
+                        <span className="text-xl font-bold text-gray-900">+{pack.amount.toLocaleString("fr-FR")}</span>
+                        <span className="text-sm font-semibold text-emerald-600">{pack.price}</span>
                       </>
                     )}
                   </Button>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Abonnements annuels */}
+          <Card className="bg-white border-0 shadow-card rounded-xl">
+            <CardHeader>
+              <CardTitle className="text-lg font-display text-gray-900">Abonnements annuels</CardTitle>
+              <CardDescription className="text-gray-500">
+                Credits recharges automatiquement chaque mois. Ideal pour les photographes reguliers.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                {SUBSCRIPTIONS.map((sub) => (
+                  <div
+                    key={sub.id}
+                    className="relative border border-gray-200 rounded-xl p-5 hover:border-emerald-300 hover:bg-emerald-50/50 transition-all cursor-pointer group"
+                    onClick={() => {
+                      toast({
+                        title: "Abonnement",
+                        description: "Le paiement par abonnement sera bientot disponible via Stripe.",
+                      });
+                    }}
+                  >
+                    <div className="flex flex-col items-center text-center gap-2">
+                      <span className="text-2xl font-bold text-gray-900">{sub.credits.toLocaleString("fr-FR")}</span>
+                      <span className="text-xs text-gray-500">credits / mois</span>
+                      <div className="mt-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-sm font-semibold">
+                        {sub.price}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
               <p className="text-xs text-gray-400 mt-3 text-center">
-                Le paiement sera traite via Stripe. 100 credits offerts a l&apos;inscription.
+                Paiement annuel via Stripe. 100 credits offerts a l&apos;inscription.
               </p>
             </CardContent>
           </Card>

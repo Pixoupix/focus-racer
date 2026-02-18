@@ -57,9 +57,6 @@ COPY --from=deps /app/node_modules/.bin ./node_modules/.bin
 # bcryptjs needed for seed script
 COPY --from=deps /app/node_modules/bcryptjs ./node_modules/bcryptjs
 
-# Create uploads directory with correct permissions
-RUN mkdir -p /app/public/uploads && chown -R nextjs:nodejs /app/public/uploads
-
 USER nextjs
 
 EXPOSE 3000

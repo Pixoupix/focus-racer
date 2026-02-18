@@ -45,6 +45,15 @@ export default function CreditsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [loadingPack, setLoadingPack] = useState<number | null>(null);
 
+  // Stripe Connect state
+  const [connectStatus, setConnectStatus] = useState<{
+    hasAccount: boolean;
+    isOnboarded: boolean;
+    chargesEnabled: boolean;
+    payoutsEnabled: boolean;
+  } | null>(null);
+  const [connectLoading, setConnectLoading] = useState(false);
+
   const fetchCredits = useCallback(async () => {
     try {
       const res = await fetch("/api/credits");
@@ -71,10 +80,22 @@ export default function CreditsPage() {
     }
   }, []);
 
+  const fetchConnectStatus = useCallback(async () => {
+    try {
+      const res = await fetch("/api/stripe/connect/status");
+      if (res.ok) {
+        setConnectStatus(await res.json());
+      }
+    } catch (error) {
+      console.error("Error fetching connect status:", error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchCredits();
     fetchTransactions(1);
-  }, [fetchCredits, fetchTransactions]);
+    fetchConnectStatus();
+  }, [fetchCredits, fetchTransactions, fetchConnectStatus]);
 
   const buyCredits = async (amount: number) => {
     setLoadingPack(amount);
@@ -105,6 +126,57 @@ export default function CreditsPage() {
       });
     } finally {
       setLoadingPack(null);
+    }
+  };
+
+  const handleConnectStripe = async () => {
+    setConnectLoading(true);
+    try {
+      const res = await fetch("/api/stripe/connect", { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        window.location.href = data.url;
+      } else {
+        const data = await res.json();
+        toast({
+          title: "Erreur",
+          description: data.error || "Impossible de démarrer la configuration Stripe",
+          variant: "destructive",
+        });
+      }
+    } catch {
+      toast({
+        title: "Erreur",
+        description: "Erreur de connexion.",
+        variant: "destructive",
+      });
+    } finally {
+      setConnectLoading(false);
+    }
+  };
+
+  const handleStripeDashboard = async () => {
+    setConnectLoading(true);
+    try {
+      const res = await fetch("/api/stripe/connect/dashboard", { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        window.open(data.url, "_blank");
+      } else {
+        toast({
+          title: "Erreur",
+          description: "Impossible d'ouvrir le dashboard Stripe",
+          variant: "destructive",
+        });
+      }
+    } catch {
+      toast({
+        title: "Erreur",
+        description: "Erreur de connexion.",
+        variant: "destructive",
+      });
+    } finally {
+      setConnectLoading(false);
     }
   };
 
@@ -203,6 +275,18 @@ export default function CreditsPage() {
               <CardDescription className="text-gray-500">Recevez vos paiements de ventes directement</CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Alert if not connected */}
+              {connectStatus && !connectStatus.isOnboarded && (
+                <div className="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200">
+                  <p className="text-sm text-amber-800 font-medium">
+                    Connectez votre compte Stripe pour recevoir les paiements de vos ventes de photos.
+                  </p>
+                  <p className="text-xs text-amber-600 mt-1">
+                    Sans compte connecté, les paiements sont conservés par la plateforme.
+                  </p>
+                </div>
+              )}
+
               <div className="flex items-center justify-between p-4 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-[#635BFF]/10 flex items-center justify-center">
@@ -213,20 +297,42 @@ export default function CreditsPage() {
                   <div>
                     <p className="font-medium text-gray-900">Stripe Connect</p>
                     <p className="text-sm text-gray-500">
-                      {session?.user?.stripeAccountId ? "Compte connecté" : "Non configuré"}
+                      {connectStatus?.isOnboarded
+                        ? "Compte actif"
+                        : connectStatus?.hasAccount
+                          ? "En cours de vérification"
+                          : "Non configuré"}
                     </p>
                   </div>
+                  {connectStatus?.isOnboarded && (
+                    <Badge className="bg-emerald-100 text-emerald-700 border-0 text-xs ml-2">Actif</Badge>
+                  )}
+                  {connectStatus?.hasAccount && !connectStatus?.isOnboarded && (
+                    <Badge className="bg-amber-100 text-amber-700 border-0 text-xs ml-2">En cours</Badge>
+                  )}
                 </div>
-                <Button
-                  className={
-                    session?.user?.stripeAccountId
-                      ? "text-emerald-500 border-emerald-200 hover:bg-emerald-50 rounded-lg"
-                      : "bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg shadow-emerald"
-                  }
-                  variant={session?.user?.stripeAccountId ? "outline" : "default"}
-                >
-                  {session?.user?.stripeAccountId ? "Gérer" : "Configurer"}
-                </Button>
+                {connectStatus?.isOnboarded ? (
+                  <Button
+                    className="text-[#635BFF] border-[#635BFF]/30 hover:bg-[#635BFF]/5 rounded-lg"
+                    variant="outline"
+                    onClick={handleStripeDashboard}
+                    disabled={connectLoading}
+                  >
+                    {connectLoading ? "..." : "Dashboard Stripe"}
+                  </Button>
+                ) : (
+                  <Button
+                    className="bg-[#635BFF] hover:bg-[#5249d9] text-white rounded-lg"
+                    onClick={handleConnectStripe}
+                    disabled={connectLoading}
+                  >
+                    {connectLoading
+                      ? "..."
+                      : connectStatus?.hasAccount
+                        ? "Reprendre la configuration"
+                        : "Connecter mon compte"}
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>

@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import archiver from "archiver";
-import { createReadStream, existsSync } from "fs";
 import path from "path";
 import { PassThrough } from "stream";
 import { ReadableStream } from "stream/web";
+import { getFromS3, getFromS3AsBuffer, publicPathToS3Key } from "@/lib/s3";
+
+/** Get the S3 key for a photo, handling both new (S3 key) and legacy (local path) formats */
+function getPhotoS3Key(photo: { path: string; s3Key?: string | null }): string {
+  // New format: path IS the S3 key (starts with "events/")
+  if (photo.path.startsWith("events/")) return photo.path;
+  // Legacy: use s3Key field if available
+  if (photo.s3Key) return photo.s3Key;
+  // Fallback: convert local path to S3 key
+  return publicPathToS3Key(photo.path);
+}
 
 export async function GET(
   request: NextRequest,
@@ -43,19 +53,10 @@ export async function GET(
       );
     }
 
-    // Collect valid photo paths
-    const photoPaths: { filePath: string; name: string }[] = [];
-    for (const item of order.items) {
-      const photoPath = path.resolve(item.photo.path);
-      if (existsSync(photoPath)) {
-        photoPaths.push({
-          filePath: photoPath,
-          name: item.photo.originalName,
-        });
-      }
-    }
+    // Collect valid photos (those with a path/S3 key)
+    const photoItems = order.items.filter((item) => item.photo.path);
 
-    if (photoPaths.length === 0) {
+    if (photoItems.length === 0) {
       return NextResponse.json(
         { error: "Aucune photo disponible" },
         { status: 404 }
@@ -71,19 +72,19 @@ export async function GET(
       },
     });
 
-    // If single photo, stream it directly
-    if (photoPaths.length === 1) {
-      const { filePath, name } = photoPaths[0];
-      const fileStream = createReadStream(filePath);
-      const passThrough = new PassThrough();
-      fileStream.pipe(passThrough);
+    // If single photo, stream it directly from S3
+    if (photoItems.length === 1) {
+      const { photo } = photoItems[0];
+      const s3Key = getPhotoS3Key(photo);
+      const stream = await getFromS3(s3Key);
+      if (!stream) {
+        return NextResponse.json({ error: "Fichier non trouvé" }, { status: 404 });
+      }
 
-      const webStream = ReadableStream.from(passThrough as AsyncIterable<Uint8Array>);
-
-      return new NextResponse(webStream as unknown as BodyInit, {
+      return new NextResponse(stream as unknown as BodyInit, {
         headers: {
           "Content-Type": "application/octet-stream",
-          "Content-Disposition": `attachment; filename="${encodeURIComponent(name)}"`,
+          "Content-Disposition": `attachment; filename="${encodeURIComponent(photo.originalName)}"`,
         },
       });
     }
@@ -99,19 +100,26 @@ export async function GET(
 
     archive.pipe(passThrough);
 
-    // Deduplicate filenames
+    // Deduplicate filenames and append buffers from S3
     const usedNames = new Set<string>();
-    for (const { filePath, name } of photoPaths) {
-      let finalName = name;
+    for (const { photo } of photoItems) {
+      let finalName = photo.originalName;
       let counter = 1;
       while (usedNames.has(finalName)) {
-        const ext = path.extname(name);
-        const base = path.basename(name, ext);
+        const ext = path.extname(photo.originalName);
+        const base = path.basename(photo.originalName, ext);
         finalName = `${base}_${counter}${ext}`;
         counter++;
       }
       usedNames.add(finalName);
-      archive.file(filePath, { name: finalName });
+
+      try {
+        const s3Key = getPhotoS3Key(photo);
+        const buffer = await getFromS3AsBuffer(s3Key);
+        archive.append(buffer, { name: finalName });
+      } catch (err) {
+        console.error(`Failed to fetch ${photo.path} from S3:`, err);
+      }
     }
 
     archive.finalize();

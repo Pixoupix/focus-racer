@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { rateLimit } from "@/lib/rate-limit";
+import { s3KeyToPublicPath } from "@/lib/s3";
 
 export async function GET(request: NextRequest) {
   // Rate limit: 30 requests/minute per IP (event list)
@@ -24,7 +25,14 @@ export async function GET(request: NextRequest) {
     // Only return events that have at least one photo
     const eventsWithPhotos = events.filter((event) => event._count.photos > 0);
 
-    return NextResponse.json(eventsWithPhotos, {
+    const mapped = eventsWithPhotos.map((e) => ({
+      ...e,
+      coverImage: e.coverImage ? s3KeyToPublicPath(e.coverImage) : null,
+      bannerImage: e.bannerImage ? s3KeyToPublicPath(e.bannerImage) : null,
+      logoImage: e.logoImage ? s3KeyToPublicPath(e.logoImage) : null,
+    }));
+
+    return NextResponse.json(mapped, {
       headers: {
         "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
       },

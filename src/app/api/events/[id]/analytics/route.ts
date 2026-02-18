@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { s3KeyToPublicPath } from "@/lib/s3";
 
 export async function GET(
   request: NextRequest,
@@ -166,9 +167,9 @@ export async function GET(
     const orphanPhotosDetails = orphanPhotos.slice(0, 50).map((p) => ({
       id: p.id,
       filename: p.originalName,
-      thumbnailPath: p.thumbnailPath,
-      webPath: p.webPath,
-      path: p.path,
+      thumbnailPath: p.thumbnailPath ? s3KeyToPublicPath(p.thumbnailPath) : null,
+      webPath: p.webPath ? s3KeyToPublicPath(p.webPath) : null,
+      path: p.path ? s3KeyToPublicPath(p.path) : null,
       createdAt: p.createdAt,
       ocrProvider: p.ocrProvider,
       qualityScore: p.qualityScore,

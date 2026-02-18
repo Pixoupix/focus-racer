@@ -2,17 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import prisma from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
-import { saveFile, getUploadedFilePath } from "@/lib/storage";
-import { processPhotoOCR } from "@/lib/ocr";
+import { saveFile } from "@/lib/storage";
 import { generateWatermarkedThumbnail } from "@/lib/watermark";
-import { analyzeQuality, autoEditImage } from "@/lib/image-processing";
+import { analyzeQuality, autoRetouchWebVersion } from "@/lib/image-processing";
 import { aiConfig } from "@/lib/ai-config";
-import { indexFaces, detectLabels } from "@/lib/rekognition";
+import { detectTextFromImage, indexFaces, detectLabels } from "@/lib/rekognition";
 import { scheduleAutoClustering } from "@/lib/auto-cluster";
 import { processingQueue } from "@/lib/processing-queue";
 
 // In-memory store for live upload status per event
-// In production, use Redis or similar
 const liveStatus = new Map<string, {
   totalPhotos: number;
   processed: number;
@@ -49,24 +47,23 @@ function notifyListeners(eventId: string, data: object) {
 
 async function processLivePhoto(
   photoId: string,
-  webFilePath: string,
+  jpegBuffer: Buffer,
+  webS3Key: string,
   eventId: string
 ) {
   const status = getOrCreateStatus(eventId);
 
   try {
-    const webFullPath = await getUploadedFilePath(webFilePath);
-
-    // Quality analysis (on web version)
-    const quality = await analyzeQuality(webFullPath);
+    // Quality analysis (on JPEG buffer)
+    const quality = await analyzeQuality(jpegBuffer);
     await prisma.photo.update({
       where: { id: photoId },
       data: { qualityScore: quality.score, isBlurry: quality.isBlurry },
     });
 
-    // Auto-edit (on web version)
+    // Auto-retouch (on web version in S3)
     if (!quality.isBlurry && aiConfig.autoEditEnabled) {
-      const wasEdited = await autoEditImage(webFullPath);
+      const wasEdited = await autoRetouchWebVersion(webS3Key);
       if (wasEdited) {
         await prisma.photo.update({
           where: { id: photoId },
@@ -75,17 +72,15 @@ async function processLivePhoto(
       }
     }
 
-    // Watermark thumbnail (from web version)
+    // Watermark thumbnail (from JPEG buffer)
     try {
-      const fs = await import("fs/promises");
-      const webBuffer = await fs.readFile(webFullPath);
       const photo = await prisma.photo.findUnique({
         where: { id: photoId },
         select: { originalName: true },
       });
       const thumbnailPath = await generateWatermarkedThumbnail(
         eventId,
-        webBuffer,
+        jpegBuffer,
         photo?.originalName || "photo.jpg"
       );
       await prisma.photo.update({
@@ -96,7 +91,7 @@ async function processLivePhoto(
       // Non-critical
     }
 
-    // OCR (on web version — < 4MB, AWS limit safe)
+    // OCR (on JPEG buffer — < 4MB, AWS limit safe)
     let validBibs: Set<string> | undefined;
     const startList = await prisma.startListEntry.findMany({
       where: { eventId },
@@ -106,30 +101,30 @@ async function processLivePhoto(
       validBibs = new Set(startList.map((s) => s.bibNumber));
     }
 
-    const ocrResult = await processPhotoOCR(webFullPath, validBibs);
+    const ocrResult = await detectTextFromImage(jpegBuffer, validBibs);
     const detectedBibs: string[] = [];
 
-    if (ocrResult.numbers.length > 0) {
+    if (ocrResult.bibNumbers.length > 0) {
       await prisma.bibNumber.createMany({
-        data: ocrResult.numbers.map((number) => ({
+        data: ocrResult.bibNumbers.map((number: string) => ({
           number,
           photoId,
           confidence: ocrResult.confidence,
-          source: ocrResult.provider,
+          source: "ocr_aws",
         })),
       });
-      detectedBibs.push(...ocrResult.numbers);
+      detectedBibs.push(...ocrResult.bibNumbers);
     }
 
     await prisma.photo.update({
       where: { id: photoId },
-      data: { ocrProvider: ocrResult.provider, processedAt: new Date() },
+      data: { ocrProvider: "ocr_aws", processedAt: new Date() },
     });
 
-    // Face indexing (on web version — < 4MB, AWS limit safe)
+    // Face indexing (on JPEG buffer — < 4MB, AWS limit safe)
     if (aiConfig.faceIndexEnabled) {
       try {
-        const faces = await indexFaces(webFullPath, `${eventId}:${photoId}`);
+        const faces = await indexFaces(jpegBuffer, `${eventId}:${photoId}`);
         if (faces.length > 0) {
           await prisma.photoFace.createMany({
             data: faces.map((face) => ({
@@ -149,10 +144,10 @@ async function processLivePhoto(
       }
     }
 
-    // Label detection (on web version)
+    // Label detection (on JPEG buffer)
     if (aiConfig.labelDetectionEnabled) {
       try {
-        const labels = await detectLabels(webFullPath, 15, 60);
+        const labels = await detectLabels(jpegBuffer, 15, 60);
         if (labels.length > 0) {
           await prisma.photo.update({
             where: { id: photoId },
@@ -172,7 +167,7 @@ async function processLivePhoto(
     status.processed++;
     const recentEntry = {
       id: photoId,
-      filename: webFilePath.split("/").pop() || "",
+      filename: webS3Key.split("/").pop() || "",
       bibNumbers: detectedBibs,
       timestamp: new Date().toISOString(),
     };
@@ -235,7 +230,7 @@ export async function POST(
       return NextResponse.json({ error: "Aucun fichier fourni" }, { status: 400 });
     }
 
-    const { filename, path, webPath, s3Key } = await saveFile(file, eventId);
+    const { filename, path, webPath, jpegBuffer, s3Key } = await saveFile(file, eventId);
 
     const photo = await prisma.photo.create({
       data: {
@@ -265,9 +260,9 @@ export async function POST(
       },
     });
 
-    // Enqueue AI processing (bounded concurrency, default 4 workers)
+    // Enqueue AI processing (bounded concurrency)
     processingQueue.enqueue(() =>
-      processLivePhoto(photo.id, webPath, eventId)
+      processLivePhoto(photo.id, jpegBuffer, webPath, eventId)
     );
 
     return NextResponse.json({

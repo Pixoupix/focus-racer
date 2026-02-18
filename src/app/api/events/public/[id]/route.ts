@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { rateLimit } from "@/lib/rate-limit";
+import { s3KeyToPublicPath } from "@/lib/s3";
 
 const PAGE_SIZE = 100;
 
@@ -56,7 +57,7 @@ export async function GET(
 
     const photosPublic = photos.map((photo) => ({
       id: photo.id,
-      src: photo.thumbnailPath || photo.webPath || photo.path,
+      src: s3KeyToPublicPath(photo.thumbnailPath || photo.webPath || photo.path),
       originalName: photo.originalName,
       bibNumbers: photo.bibNumbers,
       createdAt: photo.createdAt,
@@ -69,9 +70,9 @@ export async function GET(
       location: event.location,
       description: event.description,
       sportType: event.sportType,
-      coverImage: event.coverImage,
-      bannerImage: event.bannerImage,
-      logoImage: event.logoImage,
+      coverImage: event.coverImage ? s3KeyToPublicPath(event.coverImage) : null,
+      bannerImage: event.bannerImage ? s3KeyToPublicPath(event.bannerImage) : null,
+      logoImage: event.logoImage ? s3KeyToPublicPath(event.logoImage) : null,
       primaryColor: event.primaryColor,
       photographer: event.user.name,
       photoCount: event._count.photos,

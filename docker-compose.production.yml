@@ -35,9 +35,6 @@ services:
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
       NEXTAUTH_URL: https://focusracer.swipego.app
 
-      # Upload
-      UPLOAD_DIR: ./public/uploads
-
       # Stripe
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
@@ -70,8 +67,6 @@ services:
       NODE_OPTIONS: --max-old-space-size=16384 --expose-gc
       UV_THREADPOOL_SIZE: "16"
       NODE_ENV: production
-    volumes:
-      - ./public/uploads:/app/public/uploads
     networks:
       - focusracer-network
     depends_on:

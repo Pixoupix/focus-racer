@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { s3KeyToPublicPath } from "@/lib/s3";
 
 export async function GET(request: NextRequest) {
   try {
@@ -105,7 +106,7 @@ export async function GET(request: NextRequest) {
       location: event.location,
       sportType: event.sportType,
       status: event.status,
-      coverImage: event.coverImage,
+      coverImage: event.coverImage ? s3KeyToPublicPath(event.coverImage) : null,
       user: event.user,
       photoCount: event._count.photos,
       runnerCount: event._count.startListEntries,

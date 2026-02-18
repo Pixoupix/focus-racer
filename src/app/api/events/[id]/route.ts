@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { s3KeyToPublicPath } from "@/lib/s3";
 
 const updateEventSchema = z.object({
   name: z.string().min(1).optional(),
@@ -59,7 +60,21 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(event);
+    // Convert S3 keys to public paths for frontend
+    const mapped = {
+      ...event,
+      coverImage: event.coverImage ? s3KeyToPublicPath(event.coverImage) : null,
+      bannerImage: event.bannerImage ? s3KeyToPublicPath(event.bannerImage) : null,
+      logoImage: event.logoImage ? s3KeyToPublicPath(event.logoImage) : null,
+      photos: event.photos.map((photo) => ({
+        ...photo,
+        path: s3KeyToPublicPath(photo.path),
+        webPath: photo.webPath ? s3KeyToPublicPath(photo.webPath) : null,
+        thumbnailPath: photo.thumbnailPath ? s3KeyToPublicPath(photo.thumbnailPath) : null,
+      })),
+    };
+
+    return NextResponse.json(mapped);
   } catch (error) {
     console.error("Error fetching event:", error);
     return NextResponse.json(

@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
-import { stripe, PLATFORM_FEE_PERCENT } from "@/lib/stripe";
+import { getStripe, SERVICE_FEE_CENTS, SERVICE_FEE_EUR } from "@/lib/stripe";
 import { calculateOptimalPricing } from "@/lib/pricing";
 
 const paymentIntentSchema = z.object({
@@ -29,6 +29,11 @@ export async function POST(request: NextRequest) {
 
     const event = await prisma.event.findUnique({
       where: { id: data.eventId, status: "PUBLISHED" },
+      include: {
+        user: {
+          select: { id: true, stripeAccountId: true, stripeOnboarded: true },
+        },
+      },
     });
     if (!event) {
       return NextResponse.json({ error: "Événement non trouvé" }, { status: 404 });
@@ -90,7 +95,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Prix invalide" }, { status: 400 });
     }
 
-    const platformFee = Math.round(totalAmount * PLATFORM_FEE_PERCENT) / 100;
+    // Check if the photographer has a connected Stripe account
+    const photographerConnected =
+      !!event.user.stripeAccountId && event.user.stripeOnboarded;
+
+    // Service fee: 1€ added to the runner's total when photographer is connected
+    const serviceFee = photographerConnected ? SERVICE_FEE_EUR : 0;
+    const totalForRunner = totalAmount + serviceFee;
 
     // Create order
     const order = await prisma.order.create({
@@ -101,8 +112,9 @@ export async function POST(request: NextRequest) {
         eventId: data.eventId,
         packId: selectedPackId,
         status: "PENDING",
-        totalAmount,
-        platformFee,
+        totalAmount: totalForRunner,
+        platformFee: serviceFee,
+        serviceFee,
         items: {
           create: photos.map((photo) => ({
             photoId: photo.id,
@@ -114,9 +126,11 @@ export async function POST(request: NextRequest) {
 
     // Create PaymentIntent with automatic payment methods (card, Apple Pay, Google Pay, Link, etc.)
     const customerEmail = session?.user?.email || data.guestEmail || undefined;
+    const stripe = getStripe();
 
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(totalAmount * 100), // Stripe uses cents
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const piParams: any = {
+      amount: Math.round(totalForRunner * 100), // Stripe uses cents
       currency: "eur",
       automatic_payment_methods: {
         enabled: true,
@@ -128,7 +142,17 @@ export async function POST(request: NextRequest) {
       },
       receipt_email: customerEmail,
       description: `${photos.length} photo${photos.length > 1 ? "s" : ""} - ${event.name}`,
-    });
+    };
+
+    // If photographer is connected, use Connect with transfer_data
+    if (photographerConnected) {
+      piParams.transfer_data = {
+        destination: event.user.stripeAccountId,
+      };
+      piParams.application_fee_amount = SERVICE_FEE_CENTS;
+    }
+
+    const paymentIntent = await stripe.paymentIntents.create(piParams);
 
     // Store the PaymentIntent ID on the order
     await prisma.order.update({
@@ -139,7 +163,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
       orderId: order.id,
-      amount: totalAmount,
+      amount: totalForRunner,
+      photoPrice: totalAmount,
+      serviceFee,
+      photographerConnected,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

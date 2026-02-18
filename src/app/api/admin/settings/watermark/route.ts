@@ -2,13 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import fs from "fs/promises";
-import path from "path";
 import { invalidateWatermarkCache } from "@/lib/watermark";
+import { uploadToS3, deleteFromS3 } from "@/lib/s3";
 
-const UPLOAD_DIR = process.env.UPLOAD_DIR || "./public/uploads";
-const WATERMARK_DIR = path.join(UPLOAD_DIR, "platform");
-const WATERMARK_FILENAME = "watermark.png";
+const WATERMARK_S3_KEY = "platform/watermark.png";
 
 export async function GET() {
   try {
@@ -46,9 +43,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Opacite invalide (0.05-1)" }, { status: 400 });
     }
 
-    await fs.mkdir(WATERMARK_DIR, { recursive: true });
-
-    const watermarkPath = `/uploads/platform/${WATERMARK_FILENAME}`;
+    // Store watermark path as the S3 key (watermark.ts reads from S3 via publicPathToS3Key)
+    const watermarkPath = `/uploads/platform/watermark.png`;
 
     if (file) {
       if (!file.type.startsWith("image/")) {
@@ -56,7 +52,7 @@ export async function POST(request: NextRequest) {
       }
 
       const buffer = Buffer.from(await file.arrayBuffer());
-      await fs.writeFile(path.join(WATERMARK_DIR, WATERMARK_FILENAME), buffer);
+      await uploadToS3(buffer, WATERMARK_S3_KEY, file.type || "image/png");
     }
 
     const settings = await prisma.platformSettings.upsert({
@@ -88,9 +84,9 @@ export async function DELETE() {
       return NextResponse.json({ error: "Non autorise" }, { status: 403 });
     }
 
-    // Delete file from disk
+    // Delete from S3
     try {
-      await fs.unlink(path.join(WATERMARK_DIR, WATERMARK_FILENAME));
+      await deleteFromS3(WATERMARK_S3_KEY);
     } catch {
       // File may not exist
     }

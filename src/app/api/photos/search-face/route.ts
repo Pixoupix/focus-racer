@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { aiConfig } from "@/lib/ai-config";
 import { searchFaceByImage } from "@/lib/rekognition";
+import { s3KeyToPublicPath } from "@/lib/s3";
 
 export async function POST(request: NextRequest) {
   try {
@@ -86,7 +87,7 @@ export async function POST(request: NextRequest) {
       count: photos.length,
       photos: photos.map((p) => ({
         id: p.id,
-        src: p.thumbnailPath || p.webPath || p.path,
+        src: s3KeyToPublicPath(p.thumbnailPath || p.webPath || p.path),
         originalName: p.originalName,
         bibNumbers: p.bibNumbers,
       })),

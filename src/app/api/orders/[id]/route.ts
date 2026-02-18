@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import prisma from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { s3KeyToPublicPath } from "@/lib/s3";
 
 export async function GET(
   request: NextRequest,
@@ -63,7 +64,7 @@ export async function GET(
       createdAt: order.createdAt,
       photos: order.items.map((item) => ({
         id: item.photo.id,
-        thumbnail: item.photo.thumbnailPath,
+        thumbnail: item.photo.thumbnailPath ? s3KeyToPublicPath(item.photo.thumbnailPath) : null,
         name: item.photo.originalName,
         unitPrice: item.unitPrice,
       })),

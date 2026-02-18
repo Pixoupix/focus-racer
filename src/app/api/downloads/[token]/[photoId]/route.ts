@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { createReadStream, existsSync } from "fs";
 import path from "path";
-import { PassThrough } from "stream";
-import { ReadableStream } from "stream/web";
+import { getFromS3, publicPathToS3Key } from "@/lib/s3";
+
+/** Get the S3 key for a photo, handling both new (S3 key) and legacy (local path) formats */
+function getPhotoS3Key(photo: { path: string; s3Key?: string | null }): string {
+  if (photo.path.startsWith("events/")) return photo.path;
+  if (photo.s3Key) return photo.s3Key;
+  return publicPathToS3Key(photo.path);
+}
 
 export async function GET(
   request: NextRequest,
@@ -39,8 +44,10 @@ export async function GET(
       return NextResponse.json({ error: "Photo non trouvée dans cette commande" }, { status: 404 });
     }
 
-    const photoPath = path.resolve(item.photo.path);
-    if (!existsSync(photoPath)) {
+    // Stream from S3
+    const s3Key = getPhotoS3Key(item.photo);
+    const stream = await getFromS3(s3Key);
+    if (!stream) {
       return NextResponse.json({ error: "Fichier non trouvé" }, { status: 404 });
     }
 
@@ -53,12 +60,6 @@ export async function GET(
       },
     });
 
-    const fileStream = createReadStream(photoPath);
-    const passThrough = new PassThrough();
-    fileStream.pipe(passThrough);
-
-    const webStream = ReadableStream.from(passThrough as AsyncIterable<Uint8Array>);
-
     const ext = path.extname(item.photo.originalName) || ".jpg";
     const mimeTypes: Record<string, string> = {
       ".jpg": "image/jpeg",
@@ -67,7 +68,7 @@ export async function GET(
       ".webp": "image/webp",
     };
 
-    return new NextResponse(webStream as unknown as BodyInit, {
+    return new NextResponse(stream as unknown as BodyInit, {
       headers: {
         "Content-Type": mimeTypes[ext.toLowerCase()] || "application/octet-stream",
         "Content-Disposition": `attachment; filename="${encodeURIComponent(item.photo.originalName)}"`,

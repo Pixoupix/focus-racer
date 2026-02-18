@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { s3KeyToPublicPath } from "@/lib/s3";
 
 const createEventSchema = z.object({
   name: z.string().min(1, "Le nom est requis"),
@@ -34,7 +35,14 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json(events);
+    const mapped = events.map((e) => ({
+      ...e,
+      coverImage: e.coverImage ? s3KeyToPublicPath(e.coverImage) : null,
+      bannerImage: e.bannerImage ? s3KeyToPublicPath(e.bannerImage) : null,
+      logoImage: e.logoImage ? s3KeyToPublicPath(e.logoImage) : null,
+    }));
+
+    return NextResponse.json(mapped);
   } catch (error) {
     console.error("Error fetching events:", error);
     return NextResponse.json(

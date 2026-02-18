@@ -1,9 +1,6 @@
 import sharp from "./sharp-config";
-import fs from "fs/promises";
-import path from "path";
 import { aiConfig } from "./ai-config";
-
-const UPLOAD_DIR = process.env.UPLOAD_DIR || "./public/uploads";
+import { getFromS3AsBuffer, uploadToS3, getS3Key } from "./s3";
 
 /**
  * Analyze image quality by measuring sharpness via Laplacian variance.
@@ -54,50 +51,15 @@ export async function analyzeQuality(
 }
 
 /**
- * Auto-edit an image: normalize exposure, adjust contrast, sharpen.
- * Saves the edited version alongside the original.
+ * Auto-retouch applied to the web version stored in S3.
+ * Reads from S3, processes, re-uploads to the same key.
+ * @param webS3Key - S3 key like "events/{eventId}/web/web_xxx.webp"
  */
-export async function autoEditImage(imagePath: string): Promise<boolean> {
-  if (!aiConfig.autoEditEnabled) return false;
-
+export async function autoRetouchWebVersion(webS3Key: string): Promise<boolean> {
   try {
-    const metadata = await sharp(imagePath).metadata();
-    if (!metadata.width || !metadata.height) return false;
+    const webBuffer = await getFromS3AsBuffer(webS3Key);
 
-    // Apply auto-corrections in-place
-    await sharp(imagePath)
-      .normalize() // Auto-stretch contrast/brightness
-      .modulate({
-        brightness: 1.02, // Slight brightness boost (common for outdoor sports)
-        saturation: 1.05, // Slight saturation boost
-      })
-      .sharpen({
-        sigma: 0.8, // Gentle sharpening
-        m1: 1.0,
-        m2: 0.5,
-      })
-      .toBuffer()
-      .then((buffer) => sharp(buffer).toFile(imagePath));
-
-    return true;
-  } catch (error) {
-    console.error("Auto-edit error:", error);
-    return false;
-  }
-}
-
-/**
- * Auto-retouch applied to the web version file on disk.
- * Normalizes exposure, boosts brightness/saturation, sharpens.
- * Overwrites the webPath file in-place.
- * @param webPath - relative path like "/uploads/{eventId}/web/filename.webp"
- */
-export async function autoRetouchWebVersion(webPath: string): Promise<boolean> {
-  try {
-    // webPath is "/uploads/..." which maps to "./public/uploads/..."
-    const resolvedPath = path.resolve("./public", webPath.replace(/^\//, ""));
-
-    const buffer = await sharp(resolvedPath)
+    const retouchedBuffer = await sharp(webBuffer)
       .normalize()
       .modulate({
         brightness: 1.02,
@@ -107,7 +69,7 @@ export async function autoRetouchWebVersion(webPath: string): Promise<boolean> {
       .webp({ quality: 80 })
       .toBuffer();
 
-    await fs.writeFile(resolvedPath, buffer);
+    await uploadToS3(retouchedBuffer, webS3Key, "image/webp");
     return true;
   } catch (error) {
     console.error("[AutoRetouch] Error:", error);
@@ -118,8 +80,7 @@ export async function autoRetouchWebVersion(webPath: string): Promise<boolean> {
 /**
  * Smart Crop: generate an individual crop for each detected face.
  * Uses bounding box from Rekognition (relative 0-1 coordinates).
- * Adds generous padding around the face for context (upper body + race context).
- * Returns the relative path to the saved crop file.
+ * Uploads crop to S3, returns the S3 key.
  */
 export async function smartCropFace(
   jpegBuffer: Buffer,
@@ -157,22 +118,18 @@ export async function smartCropFace(
 
     if (cropW < 50 || cropH < 50) return null;
 
-    // Crop and save as WebP
-    const cropsDir = path.join(UPLOAD_DIR, eventId, "crops");
-    await fs.mkdir(cropsDir, { recursive: true });
-
     const cropFilename = `${photoId}_face${faceIndex}.webp`;
-    const cropFullPath = path.join(cropsDir, cropFilename);
+    const cropS3Key = getS3Key(eventId, cropFilename, "crop");
 
-    await sharp(jpegBuffer)
+    const cropBuffer = await sharp(jpegBuffer)
       .extract({ left: cropLeft, top: cropTop, width: cropW, height: cropH })
       .resize(800, 800, { fit: "inside", withoutEnlargement: true })
       .webp({ quality: 80 })
-      .toBuffer()
-      .then((buf) => fs.writeFile(cropFullPath, buf));
+      .toBuffer();
 
-    // Return relative path (for DB storage and serving)
-    return `/uploads/${eventId}/crops/${cropFilename}`;
+    await uploadToS3(cropBuffer, cropS3Key, "image/webp");
+
+    return cropS3Key;
   } catch (error) {
     console.error(`[SmartCrop] Error for photo ${photoId} face ${faceIndex}:`, error);
     return null;

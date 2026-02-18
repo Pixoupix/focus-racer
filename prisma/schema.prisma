@@ -213,6 +213,10 @@ model Order {
   status             OrderStatus @default(PENDING)
   totalAmount        Float
   platformFee        Float       @default(0)
+  serviceFee         Float       @default(0)
+  stripeFee          Float       @default(0)
+  photographerPayout Float       @default(0)
+  stripeTransferId   String?
   stripeSessionId    String?     @unique
   stripePaymentId    String?
   downloadToken      String?     @unique

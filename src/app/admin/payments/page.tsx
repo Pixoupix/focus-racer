@@ -30,6 +30,9 @@ interface OrderRow {
   id: string;
   status: string;
   totalAmount: number;
+  serviceFee: number;
+  stripeFee: number;
+  photographerPayout: number;
   guestEmail: string | null;
   guestName: string | null;
   stripeSessionId: string | null;
@@ -37,7 +40,11 @@ interface OrderRow {
   downloadCount: number;
   createdAt: string;
   user: { id: string; name: string; email: string } | null;
-  event: { id: string; name: string };
+  event: {
+    id: string;
+    name: string;
+    user: { id: string; name: string; stripeOnboarded: boolean };
+  };
   pack: { name: string; type: string } | null;
   _count: { items: number };
 }
@@ -81,6 +88,13 @@ interface PaymentStats {
   monthlyRevenue: MonthlyRevenue[];
   packBreakdown: PackBreakdown[];
   topEvents: TopEvent[];
+  connect: {
+    totalServiceFees: number;
+    totalStripeFees: number;
+    totalPhotographerPayouts: number;
+    onboardedAccounts: number;
+    totalAccounts: number;
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -225,10 +239,8 @@ export default function AdminPaymentsPage() {
       return;
     setRefundingId(orderId);
     try {
-      const res = await fetch(`/api/admin/orders`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId, action: "refund" }),
+      const res = await fetch(`/api/admin/orders/${orderId}/refund`, {
+        method: "POST",
       });
       if (res.ok) {
         fetchOrders(pagination.page);
@@ -298,8 +310,8 @@ export default function AdminPaymentsPage() {
       {/*  1) Revenue KPI Cards (6 cards)                              */}
       {/* ============================================================ */}
       {isStatsLoading ? (
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
             <Card key={i} className="glass-card rounded-2xl animate-pulse">
               <CardContent className="pt-6">
                 <div className="h-4 bg-gray-200 rounded w-2/3 mb-3" />
@@ -309,7 +321,7 @@ export default function AdminPaymentsPage() {
           ))}
         </div>
       ) : stats ? (
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* CA total */}
           <Card className="glass-card rounded-2xl border-l-4 border-l-emerald overflow-hidden">
             <CardHeader className="pb-1 pt-4 px-4">
@@ -323,6 +335,40 @@ export default function AdminPaymentsPage() {
               </p>
               <p className="text-[11px] text-muted-foreground mt-0.5">
                 Total commandes payées
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Revenus plateforme (frais de service) */}
+          <Card className="glass-card rounded-2xl border-l-4 border-l-violet-500 overflow-hidden">
+            <CardHeader className="pb-1 pt-4 px-4">
+              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Revenus plateforme
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4">
+              <p className="text-2xl font-bold text-violet-600">
+                {euro(stats.connect.totalServiceFees)}
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Frais de service (1&euro;/commande)
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Reversé photographes */}
+          <Card className="glass-card rounded-2xl border-l-4 border-l-blue-500 overflow-hidden">
+            <CardHeader className="pb-1 pt-4 px-4">
+              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Reversé photographes
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4">
+              <p className="text-2xl font-bold text-blue-600">
+                {euro(stats.connect.totalPhotographerPayouts)}
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Net après frais Stripe ({euro(stats.connect.totalStripeFees)} de frais)
               </p>
             </CardContent>
           </Card>
@@ -580,6 +626,43 @@ export default function AdminPaymentsPage() {
         </Card>
       )}
 
+      {/* Stripe Connect accounts summary */}
+      {stats && (
+        <Card className="glass-card rounded-2xl">
+          <CardHeader>
+            <CardTitle className="text-navy flex items-center gap-2">
+              <svg className="w-5 h-5 text-[#635BFF]" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/>
+              </svg>
+              Comptes Stripe Connect
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+                  <span className="text-lg font-bold text-emerald-700">{stats.connect.onboardedAccounts}</span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Photographes connect&eacute;s</p>
+                  <p className="text-xs text-muted-foreground">Compte Stripe actif</p>
+                </div>
+              </div>
+              <div className="text-2xl text-gray-300">/</div>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
+                  <span className="text-lg font-bold text-gray-600">{stats.connect.totalAccounts}</span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Photographes total</p>
+                  <p className="text-xs text-muted-foreground">Photographes, organisateurs, agences</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* ============================================================ */}
       {/*  3) Filters Row                                              */}
       {/* ============================================================ */}
@@ -733,8 +816,17 @@ export default function AdminPaymentsPage() {
                       <TableHead className="font-semibold text-navy text-center">
                         Photos
                       </TableHead>
+                      <TableHead className="font-semibold text-navy">
+                        Photographe
+                      </TableHead>
                       <TableHead className="font-semibold text-navy text-right">
                         Montant
+                      </TableHead>
+                      <TableHead className="font-semibold text-navy text-right">
+                        Frais svc
+                      </TableHead>
+                      <TableHead className="font-semibold text-navy text-right">
+                        Net photo.
                       </TableHead>
                       <TableHead className="font-semibold text-navy text-center">
                         Statut
@@ -806,9 +898,29 @@ export default function AdminPaymentsPage() {
                             {order._count.items}
                           </TableCell>
 
+                          {/* Photographer */}
+                          <TableCell>
+                            <div className="max-w-[140px]">
+                              <p className="text-sm text-navy truncate">{order.event.user?.name || "-"}</p>
+                              {order.event.user?.stripeOnboarded && (
+                                <Badge className="bg-[#635BFF]/10 text-[#635BFF] border-0 text-[10px] px-1.5">Connect</Badge>
+                              )}
+                            </div>
+                          </TableCell>
+
                           {/* Amount */}
                           <TableCell className="text-right font-semibold text-sm text-navy">
                             {euro(order.totalAmount)}
+                          </TableCell>
+
+                          {/* Service fee */}
+                          <TableCell className="text-right text-sm text-muted-foreground">
+                            {order.serviceFee > 0 ? euro(order.serviceFee) : "-"}
+                          </TableCell>
+
+                          {/* Photographer payout */}
+                          <TableCell className="text-right text-sm text-blue-600">
+                            {order.photographerPayout > 0 ? euro(order.photographerPayout) : "-"}
                           </TableCell>
 
                           {/* Status */}

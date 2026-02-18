@@ -1,9 +1,6 @@
 import sharp from "@/lib/sharp-config";
-import path from "path";
-import fs from "fs/promises";
 import prisma from "@/lib/prisma";
-
-const UPLOAD_DIR = process.env.UPLOAD_DIR || "./public/uploads";
+import { uploadToS3, getS3Key, getFromS3AsBuffer, publicPathToS3Key } from "./s3";
 
 // --- Custom watermark cache ---
 let cachedCustomWatermark: undefined | null | { buffer: Buffer; opacity: number } = undefined;
@@ -25,8 +22,9 @@ async function getCustomWatermark(): Promise<{ buffer: Buffer; opacity: number }
       return null;
     }
 
-    const fullPath = path.join("./public", settings.watermarkPath);
-    const buffer = await fs.readFile(fullPath);
+    // Read watermark from S3
+    const s3Key = publicPathToS3Key(settings.watermarkPath);
+    const buffer = await getFromS3AsBuffer(s3Key);
     cachedCustomWatermark = { buffer, opacity: settings.watermarkOpacity };
     return cachedCustomWatermark;
   } catch {
@@ -74,20 +72,18 @@ function getCachedWatermarkSvg(width: number, height: number, thumbWidth: number
 /**
  * Generate a watermarked thumbnail for public display.
  * Also generates a micro-thumbnail (400px) for dense admin grids.
+ * Uploads both to S3, returns the S3 key of the thumbnail.
  */
 export async function generateWatermarkedThumbnail(
   eventId: string,
   imageBuffer: Buffer,
   sourceFilename: string
 ): Promise<string> {
-  const thumbDir = path.join(UPLOAD_DIR, eventId, "thumbs");
-  await fs.mkdir(thumbDir, { recursive: true });
-
-  const sourceBasename = path.parse(sourceFilename).name;
+  const sourceBasename = (sourceFilename.includes("/") ? sourceFilename.split("/").pop()! : sourceFilename).replace(/\.[^.]+$/, "");
   const thumbFilename = `wm_${sourceBasename}.webp`;
   const microFilename = `micro_${sourceBasename}.webp`;
-  const thumbPath = path.join(thumbDir, thumbFilename);
-  const microPath = path.join(thumbDir, microFilename);
+  const thumbS3Key = getS3Key(eventId, thumbFilename, "thumbnail");
+  const microS3Key = getS3Key(eventId, microFilename, "micro");
 
   // Get image dimensions from buffer metadata (single decode)
   const metadata = await sharp(imageBuffer).metadata();
@@ -117,21 +113,24 @@ export async function generateWatermarkedThumbnail(
     overlayBuffer = await getCachedWatermarkSvg(width, height, thumbWidth, thumbHeight);
   }
 
-  // Generate 1200px thumbnail + 400px micro-thumbnail in parallel
+  // Generate 1200px thumbnail
   const thumbBuffer = await sharp(imageBuffer)
     .resize(1200, 1200, { fit: "inside", withoutEnlargement: true })
     .composite([{ input: overlayBuffer, gravity: "center" }])
     .webp({ quality: 75 })
     .toBuffer();
 
+  // Generate 400px micro-thumbnail from the already-composited thumbnail buffer
+  const microBuffer = await sharp(thumbBuffer)
+    .resize(400, 400, { fit: "inside", withoutEnlargement: true })
+    .webp({ quality: 60 })
+    .toBuffer();
+
+  // Upload both to S3 in parallel
   await Promise.all([
-    fs.writeFile(thumbPath, thumbBuffer),
-    // Micro-thumbnail: 400px from the already-composited thumbnail buffer
-    sharp(thumbBuffer)
-      .resize(400, 400, { fit: "inside", withoutEnlargement: true })
-      .webp({ quality: 60 })
-      .toFile(microPath),
+    uploadToS3(thumbBuffer, thumbS3Key, "image/webp"),
+    uploadToS3(microBuffer, microS3Key, "image/webp"),
   ]);
 
-  return `/uploads/${eventId}/thumbs/${thumbFilename}`;
+  return thumbS3Key;
 }

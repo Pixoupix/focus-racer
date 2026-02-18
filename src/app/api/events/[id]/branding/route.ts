@@ -2,11 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import prisma from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
-import fs from "fs/promises";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
-
-const UPLOAD_DIR = process.env.UPLOAD_DIR || "./public/uploads";
+import { uploadToS3, getS3Key, s3KeyToPublicPath } from "@/lib/s3";
 
 export async function POST(
   request: NextRequest,
@@ -38,26 +36,23 @@ export async function POST(
       return NextResponse.json({ error: "Type d'image invalide" }, { status: 400 });
     }
 
-    // Save file
-    const brandingDir = path.join(UPLOAD_DIR, id, "branding");
-    await fs.mkdir(brandingDir, { recursive: true });
-
+    // Upload to S3
     const ext = path.extname(file.name);
     const filename = `${imageType}_${uuidv4()}${ext}`;
-    const filePath = path.join(brandingDir, filename);
+    const s3Key = getS3Key(id, filename, "branding");
+    const contentType = file.type || "image/png";
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    await fs.writeFile(filePath, buffer);
+    await uploadToS3(buffer, s3Key, contentType);
 
-    const relativePath = `/uploads/${id}/branding/${filename}`;
-
-    // Update event
+    // Store S3 key in DB
     await prisma.event.update({
       where: { id },
-      data: { [imageType]: relativePath },
+      data: { [imageType]: s3Key },
     });
 
-    return NextResponse.json({ path: relativePath });
+    // Return public path for frontend
+    return NextResponse.json({ path: s3KeyToPublicPath(s3Key) });
   } catch (error) {
     console.error("Error uploading branding:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

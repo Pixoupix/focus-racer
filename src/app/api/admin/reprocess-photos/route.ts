@@ -2,29 +2,31 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import path from "path";
-import fs from "fs/promises";
 import sharp from "@/lib/sharp-config";
 import { detectTextFromImage } from "@/lib/rekognition";
 import { generateWatermarkedThumbnail as createWatermark } from "@/lib/watermark";
+import { getFromS3AsBuffer, uploadToS3, getS3Key, publicPathToS3Key } from "@/lib/s3";
 
-const UPLOAD_DIR = process.env.UPLOAD_DIR || "./public/uploads";
+/** Get the S3 key for a photo, handling both new (S3 key) and legacy (local path) formats */
+function getPhotoS3Key(photo: { path: string; s3Key?: string | null }): string {
+  if (photo.path.startsWith("events/")) return photo.path;
+  if (photo.s3Key) return photo.s3Key;
+  return publicPathToS3Key(photo.path);
+}
+
 const WEB_MAX_DIMENSION = 1600;
 const WEB_JPEG_QUALITY = 80;
 
 async function generateWebVersion(
-  originalPath: string,
+  originalBuffer: Buffer,
   eventId: string,
   filename: string
-): Promise<{ webPath: string; jpegBuffer: Buffer }> {
-  const webDir = path.join(UPLOAD_DIR, eventId, "web");
-  await fs.mkdir(webDir, { recursive: true });
-
-  const webFilename = `web_${path.parse(filename).name}.webp`;
-  const diskPath = path.join(webDir, webFilename);
+): Promise<{ webS3Key: string; jpegBuffer: Buffer }> {
+  const webFilename = `web_${filename.replace(/\.[^.]+$/, "")}.webp`;
+  const webS3Key = getS3Key(eventId, webFilename, "web");
 
   // JPEG buffer for AWS Rekognition (requires JPEG/PNG)
-  const jpegBuffer = await sharp(originalPath)
+  const jpegBuffer = await sharp(originalBuffer)
     .resize(WEB_MAX_DIMENSION, WEB_MAX_DIMENSION, {
       fit: "inside",
       withoutEnlargement: true,
@@ -32,17 +34,15 @@ async function generateWebVersion(
     .jpeg({ quality: WEB_JPEG_QUALITY, mozjpeg: true })
     .toBuffer();
 
-  // WebP on disk for gallery display
+  // WebP for S3 storage (gallery display)
   const webpBuffer = await sharp(jpegBuffer)
     .webp({ quality: WEB_JPEG_QUALITY })
     .toBuffer();
 
-  await fs.writeFile(diskPath, webpBuffer);
+  await uploadToS3(webpBuffer, webS3Key, "image/webp");
 
-  return { webPath: `/uploads/${eventId}/web/${webFilename}`, jpegBuffer };
+  return { webS3Key, jpegBuffer };
 }
-
-// Removed: use the real watermark function from @/lib/watermark instead
 
 export async function POST() {
   try {
@@ -67,54 +67,56 @@ export async function POST() {
       errors: [] as string[],
     };
 
-    console.log(`🚀 Starting reprocessing of ${photos.length} photos`);
+    console.log(`Starting reprocessing of ${photos.length} photos`);
 
     for (const photo of photos) {
       try {
-        console.log(`📸 Processing: ${photo.path}`);
+        console.log(`Processing: ${photo.path}`);
 
-        // Extract eventId and filename from path
-        const pathParts = photo.path.split("/");
-        const eventId = pathParts[2];
-        const filename = pathParts[3];
-        const originalPath = path.join(UPLOAD_DIR, eventId, filename);
-
-        // Check if file exists
+        // Read original from S3
+        const s3Key = getPhotoS3Key(photo);
+        let originalBuffer: Buffer;
         try {
-          await fs.access(originalPath);
+          originalBuffer = await getFromS3AsBuffer(s3Key);
         } catch {
-          console.error(`❌ File not found: ${originalPath}`);
+          console.error(`File not found in S3: ${s3Key}`);
           results.failed++;
-          results.errors.push(`File not found: ${photo.path}`);
+          results.errors.push(`File not found: ${s3Key}`);
           continue;
         }
 
-        // Generate web version (WebP on disk, JPEG buffer for AI)
-        const { webPath, jpegBuffer } = await generateWebVersion(originalPath, eventId, filename);
+        // Extract eventId and filename from S3 key
+        // S3 key format: events/{eventId}/originals/{filename}
+        const keyParts = s3Key.split("/");
+        const eventId = keyParts[1];
+        const filename = keyParts[3];
+
+        // Generate web version (WebP to S3, JPEG buffer for AI)
+        const { webS3Key, jpegBuffer } = await generateWebVersion(originalBuffer, eventId, filename);
 
         // Generate watermarked thumbnail using the JPEG buffer
-        const thumbnailPath = await createWatermark(eventId, jpegBuffer, filename);
+        const thumbnailS3Key = await createWatermark(eventId, jpegBuffer, filename);
 
         const validBibs = new Set(
           photo.event.startListEntries.map((e) => e.bibNumber)
         );
 
-        console.log(`  ✓ Running OCR...`);
+        console.log(`  Running OCR...`);
         const ocrResult = await detectTextFromImage(
           jpegBuffer,
           validBibs.size > 0 ? validBibs : undefined
         );
 
         console.log(
-          `  ✓ OCR found ${ocrResult.bibNumbers.length} bib(s): ${ocrResult.bibNumbers.join(", ") || "none"}`
+          `  OCR found ${ocrResult.bibNumbers.length} bib(s): ${ocrResult.bibNumbers.join(", ") || "none"}`
         );
 
         // Update photo in DB
         await prisma.photo.update({
           where: { id: photo.id },
           data: {
-            webPath,
-            thumbnailPath,
+            webPath: webS3Key,
+            thumbnailPath: thumbnailS3Key,
             ocrProvider: "ocr_aws",
           },
         });
@@ -136,9 +138,9 @@ export async function POST() {
         }
 
         results.processed++;
-        console.log(`✅ Successfully reprocessed photo ${photo.id}`);
+        console.log(`Successfully reprocessed photo ${photo.id}`);
       } catch (error) {
-        console.error(`❌ Error reprocessing photo ${photo.id}:`, error);
+        console.error(`Error reprocessing photo ${photo.id}:`, error);
         results.failed++;
         results.errors.push(
           `Photo ${photo.id}: ${error instanceof Error ? error.message : "Unknown error"}`
@@ -146,7 +148,7 @@ export async function POST() {
       }
     }
 
-    console.log(`\n✅ Reprocessing complete: ${results.processed}/${results.total} succeeded`);
+    console.log(`\nReprocessing complete: ${results.processed}/${results.total} succeeded`);
 
     return NextResponse.json({
       success: true,

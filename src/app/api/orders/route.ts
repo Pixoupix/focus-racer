@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import prisma from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { s3KeyToPublicPath } from "@/lib/s3";
 
 export async function GET() {
   try {
@@ -36,7 +37,23 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json(orders);
+    // Convert S3 keys to public paths for frontend
+    const mapped = orders.map((order) => ({
+      ...order,
+      event: {
+        ...order.event,
+        coverImage: order.event.coverImage ? s3KeyToPublicPath(order.event.coverImage) : null,
+      },
+      items: order.items.map((item) => ({
+        ...item,
+        photo: {
+          ...item.photo,
+          thumbnailPath: item.photo.thumbnailPath ? s3KeyToPublicPath(item.photo.thumbnailPath) : null,
+        },
+      })),
+    }));
+
+    return NextResponse.json(mapped);
   } catch (error) {
     console.error("Error fetching orders:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

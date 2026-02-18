@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const whereDate: Record<string, unknown> = {};
     if (from || to) whereDate.createdAt = dateFilter;
 
-    const [totalRevenue, totalOrders, refundedOrders, monthlyRevenue, packBreakdown, topEvents] =
+    const [totalRevenue, totalOrders, refundedOrders, monthlyRevenue, packBreakdown, topEvents, connectStats, feeStats] =
       await Promise.all([
         // Total revenue from paid orders (with optional date filter)
         prisma.order.aggregate({
@@ -79,7 +79,23 @@ export async function GET(request: NextRequest) {
         ORDER BY revenue DESC
         LIMIT 5
       `,
+        // Connect accounts stats
+        prisma.$queryRaw<{ onboarded: boolean; count: number }[]>`
+        SELECT "stripeOnboarded" as onboarded, COUNT(*)::int as count
+        FROM "User"
+        WHERE "role" IN ('PHOTOGRAPHER', 'ORGANIZER', 'AGENCY')
+        GROUP BY "stripeOnboarded"
+      `,
+        // Service fees + stripe fees + photographer payouts
+        prisma.order.aggregate({
+          where: { ...whereDate, status: "PAID" },
+          _sum: { serviceFee: true, stripeFee: true, photographerPayout: true },
+        }),
       ]);
+
+    // Parse connect stats
+    const onboardedCount = connectStats.find((c) => c.onboarded)?.count || 0;
+    const notOnboardedCount = connectStats.find((c) => !c.onboarded)?.count || 0;
 
     return NextResponse.json({
       revenue: {
@@ -96,6 +112,13 @@ export async function GET(request: NextRequest) {
       monthlyRevenue,
       packBreakdown,
       topEvents,
+      connect: {
+        totalServiceFees: feeStats._sum.serviceFee || 0,
+        totalStripeFees: feeStats._sum.stripeFee || 0,
+        totalPhotographerPayouts: feeStats._sum.photographerPayout || 0,
+        onboardedAccounts: onboardedCount,
+        totalAccounts: onboardedCount + notOnboardedCount,
+      },
     });
   } catch (error) {
     console.error("Error fetching payment stats:", error);

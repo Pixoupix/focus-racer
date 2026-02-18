@@ -65,6 +65,7 @@ export default function CheckoutPage({
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [isCreatingIntent, setIsCreatingIntent] = useState(false);
+  const [serviceFee, setServiceFee] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -183,6 +184,7 @@ export default function CheckoutPage({
 
       setClientSecret(data.clientSecret);
       setOrderId(data.orderId);
+      setServiceFee(data.serviceFee || 0);
     } catch (err) {
       console.error("Payment intent error:", err);
       setError("Erreur de connexion. Veuillez réessayer.");
@@ -384,7 +386,7 @@ export default function CheckoutPage({
                 <CardContent>
                   <StripePayment
                     clientSecret={clientSecret}
-                    amount={total}
+                    amount={total + serviceFee}
                     primaryColor={primaryColor}
                     returnUrl={`${typeof window !== "undefined" ? window.location.origin : ""}/events/${id}/checkout/success?order=${orderId}`}
                     onSuccess={handlePaymentSuccess}
@@ -415,6 +417,11 @@ export default function CheckoutPage({
                   )}
                 </div>
 
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Photos</span>
+                  <span>{total.toFixed(2)}\u20AC</span>
+                </div>
+
                 {savings > 0 && (
                   <div className="flex justify-between text-sm text-green-600">
                     <span>Économie</span>
@@ -422,10 +429,17 @@ export default function CheckoutPage({
                   </div>
                 )}
 
+                {serviceFee > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Frais de service</span>
+                    <span>{serviceFee.toFixed(2)}\u20AC</span>
+                  </div>
+                )}
+
                 <div className="border-t pt-4">
                   <div className="flex justify-between font-bold text-lg">
                     <span>Total</span>
-                    <span className="text-emerald">{total.toFixed(2)}\u20AC</span>
+                    <span className="text-emerald">{(total + serviceFee).toFixed(2)}\u20AC</span>
                   </div>
                 </div>
 

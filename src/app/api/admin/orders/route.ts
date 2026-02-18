@@ -51,7 +51,11 @@ export async function GET(request: NextRequest) {
             select: { id: true, name: true, email: true },
           },
           event: {
-            select: { id: true, name: true },
+            select: {
+              id: true,
+              name: true,
+              user: { select: { id: true, name: true, stripeOnboarded: true } },
+            },
           },
           pack: {
             select: { name: true, type: true },

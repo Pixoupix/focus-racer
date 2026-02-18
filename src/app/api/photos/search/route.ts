@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { rateLimit } from "@/lib/rate-limit";
+import { s3KeyToPublicPath } from "@/lib/s3";
 
 // Search photos by runner name (via start-list)
 export async function GET(request: NextRequest) {
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest) {
         if (!photosMap.has(b.photo.id)) {
           photosMap.set(b.photo.id, {
             id: b.photo.id,
-            src: b.photo.thumbnailPath || b.photo.webPath || b.photo.path,
+            src: s3KeyToPublicPath(b.photo.thumbnailPath || b.photo.webPath || b.photo.path),
             originalName: b.photo.originalName,
             bibNumbers: b.photo.bibNumbers,
           });
@@ -115,7 +116,7 @@ export async function GET(request: NextRequest) {
         if (!photosMap.has(b.photo.id)) {
           photosMap.set(b.photo.id, {
             id: b.photo.id,
-            src: b.photo.thumbnailPath || b.photo.webPath || b.photo.path,
+            src: s3KeyToPublicPath(b.photo.thumbnailPath || b.photo.webPath || b.photo.path),
             originalName: b.photo.originalName,
             bibNumbers: b.photo.bibNumbers,
           });

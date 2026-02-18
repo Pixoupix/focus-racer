@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs/promises";
-import { createReadStream } from "fs";
 import path from "path";
-import { Readable } from "stream";
 import { rateLimit } from "@/lib/rate-limit";
-
-const UPLOAD_DIR = process.env.UPLOAD_DIR || "./public/uploads";
+import { getFromS3, getS3ObjectSize } from "@/lib/s3";
 
 export async function GET(
   request: NextRequest,
@@ -30,15 +26,24 @@ export async function GET(
     return NextResponse.json({ error: "Invalid path" }, { status: 400 });
   }
 
-  const filePath = path.join(UPLOAD_DIR, ...segments);
+  // Map URL segments to S3 key
+  // URL: /uploads/{eventId}/thumbs/wm_xxx.webp → S3: events/{eventId}/thumbs/wm_xxx.webp
+  // URL: /uploads/platform/watermark.png → S3: platform/watermark.png
+  let s3Key: string;
+  if (segments[0] === "platform") {
+    s3Key = segments.join("/");
+  } else {
+    s3Key = `events/${segments.join("/")}`;
+  }
 
   try {
-    const stat = await fs.stat(filePath);
-    if (!stat.isFile()) {
+    const stream = await getFromS3(s3Key);
+    if (!stream) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const ext = path.extname(filePath).toLowerCase();
+    const filename = segments[segments.length - 1];
+    const ext = path.extname(filename).toLowerCase();
     const contentType =
       ext === ".jpg" || ext === ".jpeg"
         ? "image/jpeg"
@@ -50,17 +55,18 @@ export async function GET(
               ? "image/gif"
               : "application/octet-stream";
 
-    // Stream the file instead of loading entirely into memory
-    const nodeStream = createReadStream(filePath);
-    const webStream = Readable.toWeb(nodeStream) as ReadableStream;
+    const headers: Record<string, string> = {
+      "Content-Type": contentType,
+      "Cache-Control": "public, max-age=31536000, immutable",
+    };
 
-    return new Response(webStream, {
-      headers: {
-        "Content-Type": contentType,
-        "Content-Length": stat.size.toString(),
-        "Cache-Control": "public, max-age=31536000, immutable",
-      },
-    });
+    // Try to get content length for better streaming
+    const size = await getS3ObjectSize(s3Key);
+    if (size) {
+      headers["Content-Length"] = size.toString();
+    }
+
+    return new Response(stream, { headers });
   } catch {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }

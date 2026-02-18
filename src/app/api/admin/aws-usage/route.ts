@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
       // Total (period-filtered)
       prisma.photo.count({ where: { ocrProvider: "ocr_aws", ...dateFilter } }),
       prisma.photo.count({ where: { faceIndexed: true, ...dateFilter } }),
-      prisma.bibNumber.count({ where: { source: "face_recognition", ...dateFilter } }),
+      prisma.bibNumber.count({ where: { source: "face_recognition", ...(dateFrom ? { photo: { createdAt: { gte: dateFrom, ...(dateTo ? { lte: dateTo } : {}) } } } : {}) } }),
       prisma.photo.count({ where: { s3Key: { not: null }, ...dateFilter } }),
       prisma.photo.count({ where: { isBlurry: true, ...dateFilter } }),
       prisma.photo.count({ where: dateFilter }),
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
       // Current month
       prisma.photo.count({ where: { ocrProvider: "ocr_aws", ...currentMonthFilter } }),
       prisma.photo.count({ where: { faceIndexed: true, ...currentMonthFilter } }),
-      prisma.bibNumber.count({ where: { source: "face_recognition", ...currentMonthFilter } }),
+      prisma.bibNumber.count({ where: { source: "face_recognition", photo: { createdAt: { gte: monthStart, lte: monthEnd } } } }),
       prisma.photo.count({ where: { s3Key: { not: null }, ...currentMonthFilter } }),
 
       // Monthly trend (raw SQL for groupBy month)
@@ -102,15 +102,16 @@ export async function GET(request: NextRequest) {
       prisma.photo.count({ where: { s3Key: { not: null } } }),
     ]);
 
-    // Enrich monthly trend with SearchFacesByImage counts
+    // Enrich monthly trend with SearchFacesByImage counts (join Photo for createdAt)
     const searchByMonth = await prisma.$queryRaw<{ month: string; search: number }[]>`
       SELECT
-        TO_CHAR(DATE_TRUNC('month', b."createdAt"), 'YYYY-MM') as month,
+        TO_CHAR(DATE_TRUNC('month', p."createdAt"), 'YYYY-MM') as month,
         COUNT(*)::int as search
       FROM "BibNumber" b
+      JOIN "Photo" p ON p.id = b."photoId"
       WHERE b.source = 'face_recognition'
-        AND b."createdAt" >= NOW() - INTERVAL '12 months'
-      GROUP BY DATE_TRUNC('month', b."createdAt")
+        AND p."createdAt" >= NOW() - INTERVAL '12 months'
+      GROUP BY DATE_TRUNC('month', p."createdAt")
       ORDER BY month ASC
     `;
 

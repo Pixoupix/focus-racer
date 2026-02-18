@@ -138,7 +138,7 @@ export default function AdminMessagesPage() {
   // Filter state
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("active");
 
   // UI state
   const [isLoading, setIsLoading] = useState(true);
@@ -344,7 +344,7 @@ export default function AdminMessagesPage() {
               statusFilter === key ? "ring-2 ring-emerald/50" : ""
             }`}
             onClick={() =>
-              setStatusFilter(statusFilter === key ? "all" : key)
+              setStatusFilter(statusFilter === key ? "active" : key)
             }
           >
             <CardHeader className="pb-1 pt-4 px-4">
@@ -397,6 +397,7 @@ export default function AdminMessagesPage() {
             <SelectValue placeholder="Statut" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="active">Actifs uniquement</SelectItem>
             <SelectItem value="all">Tous les statuts</SelectItem>
             {(Object.keys(STATUS_LABELS) as MessageStatus[]).map((st) => (
               <SelectItem key={st} value={st}>

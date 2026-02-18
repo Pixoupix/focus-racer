@@ -17,7 +17,11 @@ export async function GET(request: NextRequest) {
   const search = searchParams.get("search");
 
   const where: any = {};
-  if (status) where.status = status;
+  if (status === "active") {
+    where.status = { in: ["OPEN", "IN_PROGRESS"] };
+  } else if (status) {
+    where.status = status;
+  }
   if (category) where.category = category;
   if (search) {
     where.OR = [

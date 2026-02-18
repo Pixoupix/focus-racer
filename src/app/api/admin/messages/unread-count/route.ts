@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 export async function GET() {
   try {
     const count = await prisma.supportMessage.count({
-      where: { status: { in: ["OPEN", "IN_PROGRESS"] } },
+      where: { status: "OPEN" },
     });
 
     return NextResponse.json({ count });

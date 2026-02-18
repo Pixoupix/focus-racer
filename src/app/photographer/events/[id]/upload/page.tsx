@@ -575,7 +575,7 @@ export default function UploadPage({
 
         <Card className="bg-white border-0 shadow-sm rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-gray-900">Confirmer l&apos;import</CardTitle>
+            <CardTitle className="text-gray-900">{selectedFiles.length} photo{selectedFiles.length > 1 ? "s" : ""}</CardTitle>
             <CardDescription>
               {event.name} •{" "}
               {new Date(event.date).toLocaleDateString("fr-FR", {
@@ -586,15 +586,8 @@ export default function UploadPage({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Actions + balance (top) */}
+            {/* Action + balance (top) */}
             <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                onClick={goBackToSelect}
-                className="border-gray-200 text-gray-700 rounded-xl"
-              >
-                Retour
-              </Button>
               <Button
                 onClick={startUpload}
                 disabled={!hasEnoughCredits || isUploading}
@@ -609,7 +602,7 @@ export default function UploadPage({
                     Upload en cours...
                   </span>
                 ) : (
-                  `Valider l'import (${selectedFiles.length} photo${selectedFiles.length > 1 ? "s" : ""} · ${totalCreditsNeeded} crédit${totalCreditsNeeded > 1 ? "s" : ""})`
+                  `Valider l'import (${totalCreditsNeeded} crédit${totalCreditsNeeded > 1 ? "s" : ""})`
                 )}
               </Button>
               <div className="text-right shrink-0">

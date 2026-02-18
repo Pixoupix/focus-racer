@@ -45,7 +45,7 @@ export async function PATCH(
     data.repliedBy = session.user.name || session.user.email;
     data.repliedAt = new Date();
     data.readByUser = false;
-    if (!status) data.status = "RESOLVED";
+    if (!status) data.status = "IN_PROGRESS";
   }
 
   const message = await prisma.supportMessage.update({

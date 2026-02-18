@@ -144,7 +144,7 @@ export default function AdminMessagesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
-  const [replyStatus, setReplyStatus] = useState<MessageStatus | "">("");
+  const [closingId, setClosingId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Debounced search
@@ -210,10 +210,10 @@ export default function AdminMessagesPage() {
   // ---------------------------------------------------------------------------
 
   const handleReply = async (messageId: string) => {
-    if (!replyText.trim() && !replyStatus) {
+    if (!replyText.trim()) {
       toast({
         title: "Champs requis",
-        description: "Veuillez saisir une réponse ou changer le statut",
+        description: "Veuillez saisir une réponse",
         variant: "destructive",
       });
       return;
@@ -221,14 +221,10 @@ export default function AdminMessagesPage() {
 
     setIsSubmitting(true);
     try {
-      const body: Record<string, string> = {};
-      if (replyText.trim()) body.adminReply = replyText.trim();
-      if (replyStatus) body.status = replyStatus;
-
       const response = await fetch(`/api/admin/messages/${messageId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ adminReply: replyText.trim() }),
       });
 
       if (!response.ok) {
@@ -237,13 +233,12 @@ export default function AdminMessagesPage() {
       }
 
       toast({
-        title: "Message mis à jour",
-        description: "La réponse a été envoyée avec succès",
+        title: "Réponse envoyée",
+        description: "Le message passe en statut \"En cours\"",
       });
 
       setExpandedId(null);
       setReplyText("");
-      setReplyStatus("");
       fetchMessages(pagination.page);
     } catch (error) {
       console.error("Error updating message:", error);
@@ -260,6 +255,30 @@ export default function AdminMessagesPage() {
     }
   };
 
+  const handleClose = async (messageId: string) => {
+    setClosingId(messageId);
+    try {
+      const response = await fetch(`/api/admin/messages/${messageId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "CLOSED" }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur");
+      }
+
+      toast({ title: "Conversation clôturée" });
+      setExpandedId(null);
+      setReplyText("");
+      fetchMessages(pagination.page);
+    } catch {
+      toast({ title: "Erreur", variant: "destructive" });
+    } finally {
+      setClosingId(null);
+    }
+  };
+
   // ---------------------------------------------------------------------------
   // Expand / Collapse
   // ---------------------------------------------------------------------------
@@ -268,12 +287,10 @@ export default function AdminMessagesPage() {
     if (expandedId === id) {
       setExpandedId(null);
       setReplyText("");
-      setReplyStatus("");
     } else {
       const msg = messages.find((m) => m.id === id);
       setExpandedId(id);
       setReplyText(msg?.adminReply ?? "");
-      setReplyStatus("");
     }
   };
 
@@ -556,61 +573,37 @@ export default function AdminMessagesPage() {
                         className="w-full rounded-lg border border-input bg-white px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring resize-y min-h-[100px]"
                       />
 
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground whitespace-nowrap">
-                            Changer le statut :
-                          </span>
-                          <Select
-                            value={replyStatus || "__none__"}
-                            onValueChange={(val) =>
-                              setReplyStatus(
-                                val === "__none__"
-                                  ? ""
-                                  : (val as MessageStatus)
-                              )
-                            }
-                          >
-                            <SelectTrigger className="w-44">
-                              <SelectValue placeholder="Statut inchangé" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="__none__">
-                                Statut inchangé
-                              </SelectItem>
-                              {(
-                                Object.keys(STATUS_LABELS) as MessageStatus[]
-                              ).map((st) => (
-                                <SelectItem key={st} value={st}>
-                                  {STATUS_LABELS[st]}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="flex gap-2 sm:ml-auto">
+                      <div className="flex items-center gap-2 mt-3 justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setExpandedId(null);
+                            setReplyText("");
+                          }}
+                          disabled={isSubmitting}
+                        >
+                          Annuler
+                        </Button>
+                        {msg.status !== "CLOSED" && (
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => {
-                              setExpandedId(null);
-                              setReplyText("");
-                              setReplyStatus("");
-                            }}
-                            disabled={isSubmitting}
+                            className="border-gray-300 text-gray-600 hover:bg-gray-100"
+                            onClick={() => handleClose(msg.id)}
+                            disabled={closingId === msg.id || isSubmitting}
                           >
-                            Annuler
+                            {closingId === msg.id ? "..." : "Clôturer"}
                           </Button>
-                          <Button
-                            size="sm"
-                            className="bg-emerald hover:bg-emerald-dark text-white"
-                            onClick={() => handleReply(msg.id)}
-                            disabled={isSubmitting}
-                          >
-                            {isSubmitting ? "Envoi..." : "Envoyer"}
-                          </Button>
-                        </div>
+                        )}
+                        <Button
+                          size="sm"
+                          className="bg-emerald hover:bg-emerald-dark text-white"
+                          onClick={() => handleReply(msg.id)}
+                          disabled={isSubmitting}
+                        >
+                          {isSubmitting ? "Envoi..." : "Répondre"}
+                        </Button>
                       </div>
                     </div>
                   </CardContent>

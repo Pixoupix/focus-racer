@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
         // Total revenue from paid orders (with optional date filter)
         prisma.order.aggregate({
           where: { ...whereDate, status: "PAID" },
-          _sum: { totalAmount: true, platformFee: true },
+          _sum: { totalAmount: true },
           _count: true,
           _avg: { totalAmount: true },
         }),
@@ -32,12 +32,11 @@ export async function GET(request: NextRequest) {
         prisma.order.count({ where: { ...whereDate, status: "REFUNDED" } }),
         // Monthly revenue (last 6 months) using raw SQL
         prisma.$queryRaw<
-          { month: string; revenue: number; fees: number; orders: number }[]
+          { month: string; revenue: number; orders: number }[]
         >`
         SELECT
           TO_CHAR(DATE_TRUNC('month', "createdAt"), 'YYYY-MM') as month,
           COALESCE(SUM("totalAmount"), 0)::float as revenue,
-          COALESCE(SUM("platformFee"), 0)::float as fees,
           COUNT(*)::int as orders
         FROM "Order"
         WHERE "status" = 'PAID'
@@ -85,10 +84,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       revenue: {
         total: totalRevenue._sum.totalAmount || 0,
-        platformFees: totalRevenue._sum.platformFee || 0,
-        net:
-          (totalRevenue._sum.totalAmount || 0) -
-          (totalRevenue._sum.platformFee || 0),
         avgBasket: totalRevenue._avg.totalAmount || 0,
         paidOrders: totalRevenue._count,
       },

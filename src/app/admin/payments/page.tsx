@@ -30,7 +30,6 @@ interface OrderRow {
   id: string;
   status: string;
   totalAmount: number;
-  platformFee: number;
   guestEmail: string | null;
   guestName: string | null;
   stripeSessionId: string | null;
@@ -53,7 +52,6 @@ interface Pagination {
 interface MonthlyRevenue {
   month: string;
   revenue: number;
-  fees: number;
   orders: number;
 }
 
@@ -74,8 +72,6 @@ interface TopEvent {
 interface PaymentStats {
   revenue: {
     total: number;
-    platformFees: number;
-    net: number;
     avgBasket: number;
     paidOrders: number;
   };
@@ -302,8 +298,8 @@ export default function AdminPaymentsPage() {
       {/*  1) Revenue KPI Cards (6 cards)                              */}
       {/* ============================================================ */}
       {isStatsLoading ? (
-        <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
             <Card key={i} className="glass-card rounded-2xl animate-pulse">
               <CardContent className="pt-6">
                 <div className="h-4 bg-gray-200 rounded w-2/3 mb-3" />
@@ -313,7 +309,7 @@ export default function AdminPaymentsPage() {
           ))}
         </div>
       ) : stats ? (
-        <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* CA total */}
           <Card className="glass-card rounded-2xl border-l-4 border-l-emerald overflow-hidden">
             <CardHeader className="pb-1 pt-4 px-4">
@@ -327,46 +323,6 @@ export default function AdminPaymentsPage() {
               </p>
               <p className="text-[11px] text-muted-foreground mt-0.5">
                 Total commandes payées
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Commission plateforme */}
-          <Card className="glass-card rounded-2xl border-l-4 border-l-teal-500 overflow-hidden">
-            <CardHeader className="pb-1 pt-4 px-4">
-              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Commission plateforme
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <p className="text-2xl font-bold text-teal-600">
-                {euro(stats.revenue.platformFees)}
-              </p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
-                {stats.revenue.total > 0
-                  ? (
-                      (stats.revenue.platformFees / stats.revenue.total) *
-                      100
-                    ).toFixed(1)
-                  : "0"}
-                % du CA
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Revenu net photographes */}
-          <Card className="glass-card rounded-2xl border-l-4 border-l-blue-500 overflow-hidden">
-            <CardHeader className="pb-1 pt-4 px-4">
-              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Net photographes
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <p className="text-2xl font-bold text-blue-600">
-                {euro(stats.revenue.net)}
-              </p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
-                Après commission
               </p>
             </CardContent>
           </Card>
@@ -780,9 +736,6 @@ export default function AdminPaymentsPage() {
                       <TableHead className="font-semibold text-navy text-right">
                         Montant
                       </TableHead>
-                      <TableHead className="font-semibold text-navy text-right">
-                        Commission
-                      </TableHead>
                       <TableHead className="font-semibold text-navy text-center">
                         Statut
                       </TableHead>
@@ -856,11 +809,6 @@ export default function AdminPaymentsPage() {
                           {/* Amount */}
                           <TableCell className="text-right font-semibold text-sm text-navy">
                             {euro(order.totalAmount)}
-                          </TableCell>
-
-                          {/* Commission */}
-                          <TableCell className="text-right text-sm text-teal-600">
-                            {euro(order.platformFee)}
                           </TableCell>
 
                           {/* Status */}

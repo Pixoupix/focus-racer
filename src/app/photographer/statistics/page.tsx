@@ -27,31 +27,10 @@ interface OverviewData {
   stripeOnboarded: boolean;
 }
 
-interface RevenueData {
-  total: number;
-  platformFees: number;
-  net: number;
-  paidOrders: number;
-  avgBasket: number;
-}
-
 interface DetectionData {
   totalBibs: number;
   uniqueBibs: number;
   ocrRate: string;
-}
-
-interface MonthlyRevenue {
-  month: string;
-  revenue: number;
-  orders: number;
-}
-
-interface TopEvent {
-  name: string;
-  date: string;
-  revenue: number;
-  orders: number;
 }
 
 interface SportBreakdownItem {
@@ -70,11 +49,8 @@ interface EventItem {
 
 interface StatsData {
   overview: OverviewData;
-  revenue: RevenueData;
   credits: { balance: number; totalTransactions: number; totalSpent: number };
   detection: DetectionData;
-  monthlyRevenue: MonthlyRevenue[];
-  topEvents: TopEvent[];
   sportBreakdown: SportBreakdownItem[];
   events: EventItem[];
 }
@@ -107,21 +83,6 @@ const STATUS_LABELS: Record<string, { label: string; className: string }> = {
   PUBLISHED: { label: "Publié", className: "bg-emerald-100 text-emerald-700" },
   DRAFT: { label: "Brouillon", className: "bg-gray-100 text-gray-600" },
   ARCHIVED: { label: "Archivé", className: "bg-teal-100 text-teal-700" },
-};
-
-const MONTH_LABELS: Record<string, string> = {
-  "01": "Jan",
-  "02": "Fév",
-  "03": "Mar",
-  "04": "Avr",
-  "05": "Mai",
-  "06": "Jun",
-  "07": "Jul",
-  "08": "Aoû",
-  "09": "Sep",
-  "10": "Oct",
-  "11": "Nov",
-  "12": "Dec",
 };
 
 // ---------------------------------------------------------------------------
@@ -227,41 +188,6 @@ function ProgressBar({
   );
 }
 
-function RevenueChart({ data }: { data: MonthlyRevenue[] }) {
-  if (data.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-48 text-gray-400 text-sm">
-        Aucune donnée de revenus
-      </div>
-    );
-  }
-
-  const sorted = [...data].sort((a, b) => a.month.localeCompare(b.month));
-  const maxRevenue = Math.max(...sorted.map(d => d.revenue), 1);
-
-  return (
-    <div className="flex items-end gap-2 h-48">
-      {sorted.map(d => {
-        const heightPct = (d.revenue / maxRevenue) * 100;
-        const monthKey = d.month.split("-")[1];
-        return (
-          <div key={d.month} className="flex-1 flex flex-col items-center gap-1">
-            <span className="text-xs text-gray-500 font-medium">{d.revenue.toFixed(0)}$</span>
-            <div className="w-full flex flex-col justify-end" style={{ height: "140px" }}>
-              <div
-                className="w-full bg-gradient-to-t from-emerald-600 to-emerald-400 rounded-t-lg transition-all duration-700 ease-out min-h-[4px]"
-                style={{ height: `${Math.max(heightPct, 3)}%` }}
-                title={`${d.month}: ${d.revenue.toFixed(2)}$ (${d.orders} commandes)`}
-              />
-            </div>
-            <span className="text-xs text-gray-400">{MONTH_LABELS[monthKey] || monthKey}</span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Main page
 // ---------------------------------------------------------------------------
@@ -271,7 +197,7 @@ export default function StatisticsPage() {
   const { toast } = useToast();
   const [stats, setStats] = useState<StatsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"overview" | "revenue" | "ai" | "events">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "ai" | "events">("overview");
 
   const fetchStats = useCallback(async () => {
     try {
@@ -302,7 +228,6 @@ export default function StatisticsPage() {
 
   // Derived metrics
   const overview = stats?.overview;
-  const revenue = stats?.revenue;
   const detection = stats?.detection;
   const events = stats?.events || [];
 
@@ -315,12 +240,6 @@ export default function StatisticsPage() {
   const avgPhotosPerEvent = overview && overview.totalEvents > 0
     ? (overview.totalPhotos / overview.totalEvents).toFixed(0)
     : "0";
-  const avgOrdersPerEvent = revenue && overview && overview.totalEvents > 0
-    ? (revenue.paidOrders / overview.totalEvents).toFixed(1)
-    : "0";
-  const conversionRate = overview && overview.totalRunners > 0 && revenue
-    ? ((revenue.paidOrders / overview.totalRunners) * 100).toFixed(1)
-    : "0";
 
   const totalSportEvents = (stats?.sportBreakdown || []).reduce((s, b) => s + b._count, 0);
 
@@ -332,11 +251,6 @@ export default function StatisticsPage() {
     { id: "overview" as const, label: "Vue d'ensemble", icon: (
       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
-      </svg>
-    )},
-    { id: "revenue" as const, label: "Revenus", icon: (
-      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     )},
     { id: "ai" as const, label: "Performance IA", icon: (
@@ -387,11 +301,11 @@ export default function StatisticsPage() {
       {activeTab === "overview" && (
         <div className="space-y-8">
           {/* KPI Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             {isLoading ? (
               <>
-                <SkeletonKPI /><SkeletonKPI /><SkeletonKPI /><SkeletonKPI />
-                <SkeletonKPI /><SkeletonKPI /><SkeletonKPI /><SkeletonKPI />
+                <SkeletonKPI /><SkeletonKPI /><SkeletonKPI />
+                <SkeletonKPI /><SkeletonKPI /><SkeletonKPI />
               </>
             ) : (
               <>
@@ -436,23 +350,6 @@ export default function StatisticsPage() {
                   icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>}
                 />
                 <KPICard
-                  label="Ventes totales"
-                  value={revenue?.paidOrders || 0}
-                  subtitle={`Panier moyen: ${(revenue?.avgBasket || 0).toFixed(2)}$`}
-                  iconBg="bg-green-50"
-                  iconColor="text-green-600"
-                  icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" /></svg>}
-                />
-                <KPICard
-                  label="Revenu net"
-                  value={`${(revenue?.net || 0).toFixed(2)}$`}
-                  subtitle={`Commission: ${(revenue?.platformFees || 0).toFixed(2)}$`}
-                  iconBg="bg-emerald-50"
-                  iconColor="text-emerald-600"
-                  valueColor="text-emerald-600"
-                  icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-                />
-                <KPICard
                   label="Note moyenne"
                   value={overview?.rating ? `${overview.rating.toFixed(1)}/5` : "N/A"}
                   subtitle={`${overview?.totalReviews || 0} avis`}
@@ -486,14 +383,6 @@ export default function StatisticsPage() {
                     <div className="text-center p-4 rounded-xl bg-gray-50">
                       <p className="text-2xl font-bold font-display text-gray-900">{avgPhotosPerEvent}</p>
                       <p className="text-sm text-gray-500 mt-1">Photos / événement</p>
-                    </div>
-                    <div className="text-center p-4 rounded-xl bg-gray-50">
-                      <p className="text-2xl font-bold font-display text-gray-900">{avgOrdersPerEvent}</p>
-                      <p className="text-sm text-gray-500 mt-1">Commandes / événement</p>
-                    </div>
-                    <div className="text-center p-4 rounded-xl bg-gray-50">
-                      <p className="text-2xl font-bold font-display text-emerald-600">{conversionRate}%</p>
-                      <p className="text-sm text-gray-500 mt-1">Taux de conversion</p>
                     </div>
                   </div>
                 )}
@@ -542,158 +431,6 @@ export default function StatisticsPage() {
               </CardContent>
             </Card>
           </div>
-        </div>
-      )}
-
-      {/* ============================================================= */}
-      {/* TAB: Revenus */}
-      {/* ============================================================= */}
-      {activeTab === "revenue" && (
-        <div className="space-y-8">
-          {/* Revenue KPIs */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {isLoading ? (
-              <>
-                <SkeletonKPI /><SkeletonKPI /><SkeletonKPI /><SkeletonKPI />
-              </>
-            ) : (
-              <>
-                <KPICard
-                  label="Revenu total"
-                  value={`${(revenue?.total || 0).toFixed(2)}$`}
-                  iconBg="bg-emerald-50"
-                  iconColor="text-emerald-600"
-                  valueColor="text-emerald-600"
-                  icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" /></svg>}
-                />
-                <KPICard
-                  label="Commission plateforme"
-                  value={`${(revenue?.platformFees || 0).toFixed(2)}$`}
-                  iconBg="bg-red-50"
-                  iconColor="text-red-500"
-                  icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-                />
-                <KPICard
-                  label="Revenu net"
-                  value={`${(revenue?.net || 0).toFixed(2)}$`}
-                  iconBg="bg-green-50"
-                  iconColor="text-green-600"
-                  valueColor="text-green-600"
-                  icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-                />
-                <KPICard
-                  label="Panier moyen"
-                  value={`${(revenue?.avgBasket || 0).toFixed(2)}$`}
-                  subtitle={`${revenue?.paidOrders || 0} commandes`}
-                  iconBg="bg-blue-50"
-                  iconColor="text-blue-600"
-                  icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" /></svg>}
-                />
-              </>
-            )}
-          </div>
-
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* Monthly Revenue Chart */}
-            <div className="lg:col-span-2">
-              <Card className="bg-white border-0 shadow-card rounded-2xl">
-                <CardHeader>
-                  <CardTitle className="text-lg font-display text-gray-900">Revenus mensuels</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {isLoading ? (
-                    <SkeletonBlock height="h-48" />
-                  ) : (
-                    <RevenueChart data={stats?.monthlyRevenue || []} />
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Top Events */}
-            <Card className="bg-white border-0 shadow-card rounded-2xl">
-              <CardHeader>
-                <CardTitle className="text-lg font-display text-gray-900">Top événements</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="space-y-4 animate-pulse">
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-gray-200" />
-                        <div className="flex-1 space-y-1">
-                          <div className="h-4 w-24 bg-gray-200 rounded" />
-                          <div className="h-3 w-16 bg-gray-200 rounded" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (stats?.topEvents || []).length > 0 ? (
-                  <div className="space-y-3">
-                    {(stats?.topEvents || []).map((event, index) => (
-                      <div key={`${event.name}-${index}`} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
-                        <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-sm font-bold text-emerald-600">
-                          {index + 1}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-900 text-sm truncate">{event.name}</p>
-                          <p className="text-xs text-gray-500">{event.orders} commandes</p>
-                        </div>
-                        <p className="font-semibold text-emerald-600 text-sm">{event.revenue.toFixed(2)}$</p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-400 text-sm text-center py-8">Aucune vente pour le moment</p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Revenue breakdown */}
-          <Card className="bg-white border-0 shadow-card rounded-2xl">
-            <CardHeader>
-              <CardTitle className="text-lg font-display text-gray-900">Répartition des revenus</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="h-12 animate-pulse bg-gray-100 rounded-lg" />
-              ) : (
-                <div className="space-y-4">
-                  <div className="h-6 bg-gray-100 rounded-full overflow-hidden flex">
-                    {revenue && revenue.total > 0 ? (
-                      <>
-                        <div
-                          className="h-full bg-emerald-500 transition-all duration-700"
-                          style={{ width: `${((revenue.net / revenue.total) * 100).toFixed(1)}%` }}
-                          title={`Net: ${revenue.net.toFixed(2)}$`}
-                        />
-                        <div
-                          className="h-full bg-red-400 transition-all duration-700"
-                          style={{ width: `${((revenue.platformFees / revenue.total) * 100).toFixed(1)}%` }}
-                          title={`Commission: ${revenue.platformFees.toFixed(2)}$`}
-                        />
-                      </>
-                    ) : (
-                      <div className="h-full w-full bg-gray-200" />
-                    )}
-                  </div>
-                  <div className="flex gap-6 text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                      <span className="text-gray-600">Revenu net</span>
-                      <span className="font-semibold text-gray-900">{(revenue?.net || 0).toFixed(2)}$</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-red-400" />
-                      <span className="text-gray-600">Commission</span>
-                      <span className="font-semibold text-gray-900">{(revenue?.platformFees || 0).toFixed(2)}$</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </div>
       )}
 

@@ -12,7 +12,7 @@ export async function GET() {
 
     const userId = session.user.id;
 
-    const [user, events, photoStats, orderStats, creditStats, monthlyData, topEvents, sportBreakdown] = await Promise.all([
+    const [user, events, photoStats, orderStats, creditStats, monthlyData, topEvents, sportBreakdown, connectFees] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
         select: { credits: true, avgRating: true, totalReviews: true, createdAt: true, stripeOnboarded: true },
@@ -77,6 +77,11 @@ export async function GET() {
         where: { userId },
         _count: true,
       }),
+      // Connect fees breakdown
+      prisma.order.aggregate({
+        where: { event: { userId }, status: "PAID" },
+        _sum: { serviceFee: true, stripeFee: true, photographerPayout: true },
+      }),
     ]);
 
     // Additional derived metrics
@@ -118,6 +123,9 @@ export async function GET() {
         net: (orderStats._sum.totalAmount || 0) - (orderStats._sum.platformFee || 0),
         paidOrders: orderStats._count,
         avgBasket: orderStats._avg.totalAmount || 0,
+        serviceFees: connectFees._sum.serviceFee || 0,
+        stripeFees: connectFees._sum.stripeFee || 0,
+        photographerPayout: connectFees._sum.photographerPayout || 0,
       },
       credits: {
         balance: user?.credits || 0,

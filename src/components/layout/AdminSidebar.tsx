@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useSSENotifications } from "@/hooks/useSSENotifications";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
@@ -88,23 +89,26 @@ export default function AdminSidebar() {
   const pathname = usePathname();
   const [unreadCount, setUnreadCount] = useState(0);
 
-  useEffect(() => {
-    const fetchUnread = async () => {
-      try {
-        const res = await fetch("/api/admin/messages/unread-count");
-        if (res.ok) {
-          const data = await res.json();
-          setUnreadCount(data.count);
-        }
-      } catch {
-        // silently ignore
+  const fetchUnread = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/messages/unread-count");
+      if (res.ok) {
+        const data = await res.json();
+        setUnreadCount(data.count);
       }
-    };
-
-    fetchUnread();
-    const interval = setInterval(fetchUnread, 30000);
-    return () => clearInterval(interval);
+    } catch {
+      // silently ignore
+    }
   }, []);
+
+  // SSE for instant notifications + polling fallback every 10s
+  useSSENotifications(["admin_unread", "connected"], fetchUnread);
+
+  useEffect(() => {
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 10000);
+    return () => clearInterval(interval);
+  }, [fetchUnread]);
 
   return (
     <aside className="w-64 gradient-navy text-white min-h-screen flex flex-col">

@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { getRoleLabel } from "@/lib/role-helpers";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSSENotifications } from "@/hooks/useSSENotifications";
 
 interface NavItem {
   href: string;
@@ -124,23 +125,26 @@ export default function ClientSidebar() {
   const { data: session } = useSession();
   const [unreadCount, setUnreadCount] = useState(0);
 
-  useEffect(() => {
-    const fetchUnread = async () => {
-      try {
-        const res = await fetch("/api/support/unread-count");
-        if (res.ok) {
-          const data = await res.json();
-          setUnreadCount(data.count);
-        }
-      } catch {
-        // silently ignore
+  const fetchUnread = useCallback(async () => {
+    try {
+      const res = await fetch("/api/support/unread-count");
+      if (res.ok) {
+        const data = await res.json();
+        setUnreadCount(data.count);
       }
-    };
-
-    fetchUnread();
-    const interval = setInterval(fetchUnread, 30000);
-    return () => clearInterval(interval);
+    } catch {
+      // silently ignore
+    }
   }, []);
+
+  // SSE for instant notifications + polling fallback every 10s
+  useSSENotifications(["user_unread", "connected"], fetchUnread);
+
+  useEffect(() => {
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 10000);
+    return () => clearInterval(interval);
+  }, [fetchUnread]);
 
   const userName = session?.user?.name || "Utilisateur";
   const userRole = session?.user?.role || "PHOTOGRAPHER";

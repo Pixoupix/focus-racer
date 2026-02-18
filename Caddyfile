@@ -2,6 +2,15 @@ focusracer.swipego.app {
     # Automatic HTTPS with Let's Encrypt
     # No configuration needed - Caddy handles it!
 
+    # SSE notifications — no buffering, no compression
+    @sse path /api/notifications/stream
+    reverse_proxy @sse app:3000 {
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        flush_interval -1
+    }
+
     # Reverse proxy to Next.js app
     reverse_proxy app:3000 {
         # Forward real client IP

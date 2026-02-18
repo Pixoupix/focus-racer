@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { useSSENotifications } from "@/hooks/useSSENotifications";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -212,6 +213,46 @@ export default function AdminMessagesPage() {
   useEffect(() => {
     fetchMessages(1);
   }, [fetchMessages]);
+
+  // Auto-refresh message list (silently, without loading spinner) on SSE event
+  const paginationRef = useRef(pagination);
+  paginationRef.current = pagination;
+
+  const silentRefresh = useCallback(async () => {
+    try {
+      const params = new URLSearchParams({
+        page: paginationRef.current.page.toString(),
+        limit: "20",
+      });
+      if (debouncedSearch) params.set("search", debouncedSearch);
+      if (categoryFilter !== "all") params.set("category", categoryFilter);
+      if (statusFilter !== "all") params.set("status", statusFilter);
+
+      const response = await fetch(`/api/admin/messages?${params}`);
+      if (!response.ok) return;
+
+      const data = await response.json();
+      setMessages(data.messages);
+      setPagination(data.pagination);
+      setStatusCounts({
+        OPEN: data.statusCounts?.OPEN ?? 0,
+        IN_PROGRESS: data.statusCounts?.IN_PROGRESS ?? 0,
+        RESOLVED: data.statusCounts?.RESOLVED ?? 0,
+        CLOSED: data.statusCounts?.CLOSED ?? 0,
+      });
+    } catch {
+      // silent
+    }
+  }, [debouncedSearch, categoryFilter, statusFilter]);
+
+  // SSE: auto-refresh when user sends or replies to a message
+  useSSENotifications(["admin_unread", "connected"], silentRefresh);
+
+  // Also poll every 10s as safety net
+  useEffect(() => {
+    const interval = setInterval(silentRefresh, 10000);
+    return () => clearInterval(interval);
+  }, [silentRefresh]);
 
   // ---------------------------------------------------------------------------
   // Reply / Update status

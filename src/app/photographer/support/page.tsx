@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { useSSENotifications } from "@/hooks/useSSENotifications";
 import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -114,6 +115,34 @@ export default function PhotographerSupportPage() {
       fetch("/api/support/mark-read", { method: "POST" }).catch(() => {});
     }
   }, [session, page, fetchMessages]);
+
+  // Auto-refresh message list (silently) when admin replies via SSE
+  const pageRef = useRef(page);
+  pageRef.current = page;
+
+  const silentRefresh = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/support?page=${pageRef.current}&limit=20`);
+      if (res.ok) {
+        const data = await res.json();
+        setMessages(data.messages);
+        setPagination(data.pagination);
+      }
+      // Also mark as read since we're looking at the page
+      fetch("/api/support/mark-read", { method: "POST" }).catch(() => {});
+    } catch {
+      // silent
+    }
+  }, []);
+
+  // SSE: auto-refresh when admin replies
+  useSSENotifications(["user_unread", "connected"], silentRefresh);
+
+  // Also poll every 10s as safety net
+  useEffect(() => {
+    const interval = setInterval(silentRefresh, 10000);
+    return () => clearInterval(interval);
+  }, [silentRefresh]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

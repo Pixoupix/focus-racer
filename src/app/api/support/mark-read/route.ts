@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { notificationEmitter } from "@/lib/notification-emitter";
 
 export async function POST() {
   try {
@@ -10,7 +11,7 @@ export async function POST() {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    await prisma.supportMessage.updateMany({
+    const result = await prisma.supportMessage.updateMany({
       where: {
         userId: session.user.id,
         adminReply: { not: null },
@@ -18,6 +19,11 @@ export async function POST() {
       },
       data: { readByUser: true },
     });
+
+    // If messages were marked read, notify user's other tabs to update badge
+    if (result.count > 0) {
+      notificationEmitter.notifyUser(session.user.id);
+    }
 
     return NextResponse.json({ success: true });
   } catch {

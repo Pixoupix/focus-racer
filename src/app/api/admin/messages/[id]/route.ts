@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { notificationEmitter } from "@/lib/notification-emitter";
 
 export async function GET(
   request: NextRequest,
@@ -68,6 +69,13 @@ export async function PATCH(
       user: { select: { id: true, name: true, email: true, role: true } },
     },
   });
+
+  // Notify user in real-time that admin replied or status changed
+  if (message.userId) {
+    notificationEmitter.notifyUser(message.userId);
+  }
+  // Also notify admin sidebar (badge count changes when status changes)
+  notificationEmitter.notifyAdmin();
 
   return NextResponse.json(message);
 }

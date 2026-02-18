@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { notificationEmitter } from "@/lib/notification-emitter";
 
 // PATCH - User replies to a conversation or closes it
 export async function PATCH(
@@ -38,6 +39,8 @@ export async function PATCH(
       where: { id: params.id },
       data: { status: "CLOSED" },
     });
+    // Notify admin that a message was closed (count may change)
+    notificationEmitter.notifyAdmin();
     return NextResponse.json(updated);
   }
 
@@ -62,6 +65,9 @@ export async function PATCH(
       readByUser: true,
     },
   });
+
+  // Notify admin that user replied (status changed to OPEN)
+  notificationEmitter.notifyAdmin();
 
   return NextResponse.json(updated);
 }

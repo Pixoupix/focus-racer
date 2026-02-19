@@ -680,16 +680,18 @@ export default function AdminDataPage() {
               </CardContent>
             </Card>
           </div>
-          {Object.keys(data.users.byReferralSource).length > 0 && (
-            <Card className="glass-card mt-6">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium">Source d&apos;acquisition</CardTitle>
-              </CardHeader>
-              <CardContent>
+          <Card className="glass-card mt-6">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium">Comment avez-vous connu Focus Racer ?</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {Object.keys(data.users.byReferralSource).length > 0 ? (
                 <RecordBars data={data.users.byReferralSource} labelMap={REFERRAL_LABELS} barClass="bg-emerald-400" />
-              </CardContent>
-            </Card>
-          )}
+              ) : (
+                <p className="text-sm text-muted-foreground">Aucune donnee</p>
+              )}
+            </CardContent>
+          </Card>
         </section>
 
         {/* ────── S2: EVENEMENTS ────── */}

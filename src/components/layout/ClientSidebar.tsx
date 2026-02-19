@@ -164,22 +164,22 @@ export default function ClientSidebar() {
   }, [userRole]);
 
   return (
-    <aside className="w-64 bg-gradient-to-b from-teal to-teal-800 text-white min-h-screen flex flex-col shadow-sidebar">
+    <aside className="w-64 gradient-navy text-white min-h-screen flex flex-col">
       {/* Logo */}
-      <div className="p-6 pb-4">
-        <Link href="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
-            <span className="text-white font-bold text-lg">FR</span>
+      <div className="p-6">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg gradient-emerald flex items-center justify-center">
+            <span className="text-white font-bold text-sm">FR</span>
           </div>
-          <div>
-            <span className="text-xl font-bold font-display">Focus Racer</span>
-            <p className="text-white/60 text-xs">{getRoleLabel(userRole)}</p>
-          </div>
+          <span className="text-lg font-bold">
+            Focus <span className="text-emerald">Racer</span>
+          </span>
         </Link>
+        <p className="text-navy-200 text-xs mt-2 ml-10">{getRoleLabel(userRole)}</p>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4">
+      <nav className="flex-1 px-3 mt-2">
         <ul className="space-y-1">
           {navItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
@@ -188,16 +188,13 @@ export default function ClientSidebar() {
                 <Link
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200",
+                    "flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
                     isActive
-                      ? "bg-white text-teal shadow-sm"
-                      : "text-white/70 hover:bg-white/10 hover:text-white"
+                      ? "bg-white/10 text-emerald shadow-sm"
+                      : "text-navy-100 hover:bg-white/5 hover:text-white"
                   )}
                 >
-                  <span className={cn(
-                    "transition-colors",
-                    isActive ? "text-teal" : "text-white/60"
-                  )}>
+                  <span className={cn(isActive ? "text-emerald" : "text-navy-200")}>
                     {item.icon}
                   </span>
                   {item.label}
@@ -214,21 +211,21 @@ export default function ClientSidebar() {
       </nav>
 
       {/* User profile */}
-      <div className="p-4 border-t border-white/10">
-        <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-white/10 mb-3">
-          <div className="w-10 h-10 rounded-full bg-emerald flex items-center justify-center text-white font-bold text-sm shadow-emerald">
+      <div className="p-4 border-t border-white/5">
+        <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white/5 mb-3">
+          <div className="w-8 h-8 rounded-lg gradient-emerald flex items-center justify-center text-white font-bold text-xs">
             {userInitials}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-white truncate">{userName}</p>
-            <p className="text-xs text-white/60 truncate">{getRoleLabel(userRole)}</p>
+            <p className="text-xs text-navy-200 truncate">{getRoleLabel(userRole)}</p>
           </div>
         </div>
         <button
           onClick={() => signOut({ callbackUrl: "/" })}
-          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-white/70 hover:bg-white/10 hover:text-white transition-all duration-200"
+          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-navy-200 hover:text-white hover:bg-white/5 transition-all duration-200"
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
           </svg>
           Déconnexion

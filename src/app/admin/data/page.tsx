@@ -349,7 +349,7 @@ function RecordBars({
   suffix?: string;
 }) {
   const entries = Object.entries(data).sort((a, b) => b[1] - a[1]);
-  const maxVal = Math.max(...entries.map(([, v]) => v), 1);
+  const maxVal = Math.max(entries.reduce((s, [, v]) => s + v, 0), 1);
   return (
     <div className="space-y-2">
       {entries.map(([key, val]) => (
@@ -373,7 +373,7 @@ function ArrayBars({
   data: { range: string; count: number }[];
   barClass: string;
 }) {
-  const maxVal = Math.max(...data.map((d) => d.count), 1);
+  const maxVal = Math.max(data.reduce((s, d) => s + d.count, 0), 1);
   return (
     <div className="space-y-2">
       {data.map((d) => (
@@ -400,7 +400,7 @@ function TrendBars({
   valueKey?: string;
   suffix?: string;
 }) {
-  const maxVal = Math.max(...data.map((d) => d[valueKey] || 0), 1);
+  const maxVal = Math.max(data.reduce((s, d) => s + (d[valueKey] || 0), 0), 1);
   return (
     <div className="space-y-2">
       {data.map((d) => {
@@ -813,7 +813,9 @@ export default function AdminDataPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {data.bibs.topBibs.map((b, i) => (
+                  {(() => {
+                    const totalPhotos = Math.max(data.bibs.topBibs.reduce((s, b) => s + b.photoCount, 0), 1);
+                    return data.bibs.topBibs.map((b, i) => (
                     <div key={b.number} className="flex items-center gap-3">
                       <span className="text-sm font-bold text-navy w-6">{i + 1}.</span>
                       <Badge variant="outline" className="font-mono">
@@ -824,7 +826,7 @@ export default function AdminDataPage() {
                           className="bg-purple-500 h-4 rounded-full"
                           style={{
                             width: `${Math.max(
-                              (b.photoCount / (data.bibs.topBibs[0]?.photoCount || 1)) * 100,
+                              (b.photoCount / totalPhotos) * 100,
                               3
                             )}%`,
                           }}
@@ -834,7 +836,8 @@ export default function AdminDataPage() {
                         {b.photoCount} photos
                       </span>
                     </div>
-                  ))}
+                  ));
+                  })()}
                 </div>
               </CardContent>
             </Card>
@@ -883,24 +886,20 @@ export default function AdminDataPage() {
               <CardContent>
                 {Object.keys(data.sales.revenueByPackType).length > 0 ? (
                   <div className="space-y-2">
-                    {Object.entries(data.sales.revenueByPackType)
-                      .sort((a, b) => b[1].revenue - a[1].revenue)
-                      .map(([type, info]) => {
-                        const maxRev = Math.max(
-                          ...Object.values(data.sales.revenueByPackType).map((v) => v.revenue),
-                          1
-                        );
-                        return (
-                          <ProgressBar
-                            key={type}
-                            label={PACK_TYPE_LABELS[type] || type}
-                            value={info.revenue}
-                            maxValue={maxRev}
-                            barClass="bg-emerald-400"
-                            suffix={` \u20ac (${info.count})`}
-                          />
-                        );
-                      })}
+                    {(() => {
+                      const sorted = Object.entries(data.sales.revenueByPackType).sort((a, b) => b[1].revenue - a[1].revenue);
+                      const totalRev = Math.max(sorted.reduce((s, [, v]) => s + v.revenue, 0), 1);
+                      return sorted.map(([type, info]) => (
+                        <ProgressBar
+                          key={type}
+                          label={PACK_TYPE_LABELS[type] || type}
+                          value={info.revenue}
+                          maxValue={totalRev}
+                          barClass="bg-emerald-400"
+                          suffix={` \u20ac (${info.count})`}
+                        />
+                      ));
+                    })()}
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">Aucune vente</p>
@@ -925,19 +924,19 @@ export default function AdminDataPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {data.sales.topEventsByRevenue.map((ev, i) => {
-                    const maxRev = data.sales.topEventsByRevenue[0]?.revenue || 1;
-                    return (
+                  {(() => {
+                    const totalRev = Math.max(data.sales.topEventsByRevenue.reduce((s, ev) => s + ev.revenue, 0), 1);
+                    return data.sales.topEventsByRevenue.map((ev, i) => (
                       <ProgressBar
                         key={ev.eventId}
                         label={`${i + 1}. ${ev.eventName}`}
                         value={ev.revenue}
-                        maxValue={maxRev}
+                        maxValue={totalRev}
                         barClass="bg-emerald-500"
                         suffix={` \u20ac (${ev.orders} cmd)`}
                       />
-                    );
-                  })}
+                    ));
+                  })()}
                 </div>
               </CardContent>
             </Card>

@@ -42,6 +42,7 @@ export async function GET(request: NextRequest) {
       signupTrend,
       newUsersInPeriod,
       stripeOnboarded,
+      referralSourceGroups,
 
       // --- EVENTS ---
       totalEvents,
@@ -144,6 +145,7 @@ export async function GET(request: NextRequest) {
         ? prisma.user.count({ where: dateFilter })
         : prisma.user.count(),
       prisma.user.count({ where: { stripeOnboarded: true } }),
+      prisma.user.groupBy({ by: ["referralSource"], _count: true }),
 
       // --- EVENTS ---
       prisma.event.count(),
@@ -416,6 +418,10 @@ export async function GET(request: NextRequest) {
         signupTrend: signupTrend,
         newInPeriod: newUsersInPeriod,
         stripeOnboarded,
+        byReferralSource: referralSourceGroups.reduce((acc: Record<string, number>, g: any) => {
+          acc[g.referralSource || "null"] = g._count;
+          return acc;
+        }, {}),
       },
 
       events: {

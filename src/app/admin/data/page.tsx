@@ -44,6 +44,7 @@ interface DataResponse {
     signupTrend: TrendItem[];
     newInPeriod: number;
     stripeOnboarded: number;
+    byReferralSource: Record<string, number>;
   };
   events: {
     total: number;
@@ -232,6 +233,16 @@ const SOURCE_LABELS: Record<string, string> = {
   face_cluster: "Face Cluster",
   face_recognition: "Face Recognition",
   manual: "Manuel",
+};
+
+const REFERRAL_LABELS: Record<string, string> = {
+  word_of_mouth: "Bouche a oreille",
+  google: "Recherche Google",
+  social_media: "Reseaux sociaux",
+  event: "Salon / Evenement",
+  friend: "Ami / Collegue",
+  other: "Autre",
+  null: "Non renseigne",
 };
 
 const TX_TYPE_LABELS: Record<string, string> = {
@@ -669,6 +680,16 @@ export default function AdminDataPage() {
               </CardContent>
             </Card>
           </div>
+          {Object.keys(data.users.byReferralSource).length > 0 && (
+            <Card className="glass-card mt-6">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">Source d&apos;acquisition</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <RecordBars data={data.users.byReferralSource} labelMap={REFERRAL_LABELS} barClass="bg-emerald-400" />
+              </CardContent>
+            </Card>
+          )}
         </section>
 
         {/* ────── S2: EVENEMENTS ────── */}
